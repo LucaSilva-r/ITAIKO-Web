@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, type RefObject } from "react";
 import type { ConnectionStatus, DeviceCommand } from "@/types";
 import { PICO_VENDOR_ID, BAUD_RATE } from "@/types";
 import { encodeCommand, decodeResponse } from "@/lib/serial-protocol";
@@ -10,7 +10,7 @@ interface UseWebSerialReturn {
   isSupported: boolean;
 
   // Port management
-  port: SerialPort | null;
+  port: RefObject<SerialPort | null>;
   requestPort: () => Promise<SerialPort | null>;
   connect: () => Promise<boolean>;
   disconnect: () => Promise<void>;
@@ -29,15 +29,61 @@ interface UseWebSerialReturn {
 export function useWebSerial(): UseWebSerialReturn {
   const [status, setStatus] = useState<ConnectionStatus>("disconnected");
   const [error, setError] = useState<string | null>(null);
-  const [port, setPort] = useState<SerialPort | null>(null);
+  const port = useRef<SerialPort | null>(null);
   const [isReading, setIsReading] = useState(false);
 
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const writerRef = useRef<WritableStreamDefaultWriter<Uint8Array> | null>(null);
-  const readingRef = useRef(false);
   const bufferRef = useRef("");
 
+  // Callback ref - allows swapping the callback without restarting the loop
+  const onDataCallbackRef = useRef<((line: string) => void) | null>(null);
+  const loopRunningRef = useRef(false);
+
   const isSupported = typeof navigator !== "undefined" && "serial" in navigator;
+
+  // Internal function to start the read loop (called once on connect)
+  const startReadLoop = useCallback(() => {
+    if (loopRunningRef.current || !readerRef.current) {
+      return;
+    }
+
+    loopRunningRef.current = true;
+
+    const readLoop = async () => {
+      while (loopRunningRef.current && readerRef.current) {
+        try {
+          const { value, done } = await readerRef.current.read();
+
+          if (done || !loopRunningRef.current) {
+            break;
+          }
+
+          bufferRef.current += decodeResponse(value);
+
+          // Process all complete lines
+          let newlineIndex: number;
+          while ((newlineIndex = bufferRef.current.indexOf("\n")) !== -1) {
+            const line = bufferRef.current.slice(0, newlineIndex).trim();
+            bufferRef.current = bufferRef.current.slice(newlineIndex + 1);
+            // Only call callback if one is set (streaming is active)
+            if (line && onDataCallbackRef.current) {
+              onDataCallbackRef.current(line);
+            }
+          }
+        } catch (err) {
+          if (loopRunningRef.current) {
+            console.error("Read error:", err);
+          }
+          break;
+        }
+      }
+
+      loopRunningRef.current = false;
+    };
+
+    readLoop();
+  }, []);
 
   const requestPort = useCallback(async (): Promise<SerialPort | null> => {
     if (!isSupported) {
@@ -49,7 +95,7 @@ export function useWebSerial(): UseWebSerialReturn {
       const selectedPort = await navigator.serial.requestPort({
         filters: [{ usbVendorId: PICO_VENDOR_ID }],
       });
-      setPort(selectedPort);
+      port.current = selectedPort;
       setError(null);
       return selectedPort;
     } catch (err) {
@@ -61,7 +107,7 @@ export function useWebSerial(): UseWebSerialReturn {
   }, [isSupported]);
 
   const connect = useCallback(async (): Promise<boolean> => {
-    if (!port) {
+    if (!port.current) {
       setError("No port selected");
       return false;
     }
@@ -70,12 +116,16 @@ export function useWebSerial(): UseWebSerialReturn {
       setStatus("connecting");
       setError(null);
 
-      await port.open({ baudRate: BAUD_RATE });
+      await port.current.open({ baudRate: BAUD_RATE });
 
-      if (port.readable && port.writable) {
-        readerRef.current = port.readable.getReader();
-        writerRef.current = port.writable.getWriter();
+      if (port.current.readable && port.current.writable) {
+        readerRef.current = port.current.readable.getReader();
+        writerRef.current = port.current.writable.getWriter();
         setStatus("connected");
+
+        // Start the read loop immediately on connect
+        startReadLoop();
+
         return true;
       } else {
         throw new Error("Port streams not available");
@@ -86,10 +136,12 @@ export function useWebSerial(): UseWebSerialReturn {
       setStatus("error");
       return false;
     }
-  }, [port]);
+  }, [port, startReadLoop]);
 
   const disconnect = useCallback(async (): Promise<void> => {
-    readingRef.current = false;
+    // Stop the read loop
+    loopRunningRef.current = false;
+    onDataCallbackRef.current = null;
     setIsReading(false);
 
     try {
@@ -104,8 +156,8 @@ export function useWebSerial(): UseWebSerialReturn {
         writerRef.current = null;
       }
 
-      if (port) {
-        await port.close();
+      if (port.current) {
+        await port.current.close();
       }
     } catch (err) {
       console.error("Error during disconnect:", err);
@@ -187,53 +239,23 @@ export function useWebSerial(): UseWebSerialReturn {
     [readLine]
   );
 
+  // Start reading: just set the callback - the loop is already running
   const startReading = useCallback(
     (onData: (line: string) => void): void => {
-      if (readingRef.current || !readerRef.current) {
-        return;
-      }
-
-      readingRef.current = true;
+      onDataCallbackRef.current = onData;
       setIsReading(true);
 
-      const readLoop = async () => {
-        while (readingRef.current && readerRef.current) {
-          try {
-            const { value, done } = await readerRef.current.read();
-            if (done) {
-              break;
-            }
-
-            bufferRef.current += decodeResponse(value);
-
-            // Process all complete lines
-            let newlineIndex: number;
-            while ((newlineIndex = bufferRef.current.indexOf("\n")) !== -1) {
-              const line = bufferRef.current.slice(0, newlineIndex).trim();
-              bufferRef.current = bufferRef.current.slice(newlineIndex + 1);
-              if (line) {
-                onData(line);
-              }
-            }
-          } catch (err) {
-            if (readingRef.current) {
-              console.error("Read error:", err);
-            }
-            break;
-          }
-        }
-
-        readingRef.current = false;
-        setIsReading(false);
-      };
-
-      readLoop();
+      // Restart loop if it stopped (e.g., due to an error)
+      if (!loopRunningRef.current && readerRef.current) {
+        startReadLoop();
+      }
     },
-    []
+    [startReadLoop]
   );
 
+  // Stop reading: just clear the callback - the loop keeps running
   const stopReading = useCallback((): void => {
-    readingRef.current = false;
+    onDataCallbackRef.current = null;
     setIsReading(false);
   }, []);
 

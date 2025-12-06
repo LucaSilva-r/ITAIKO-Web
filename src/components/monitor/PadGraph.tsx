@@ -13,6 +13,7 @@ interface PadGraphProps {
   heavyThreshold: number;
   cutoffThreshold: number;
   showHeavy: boolean;
+  numPoints?: number;
 }
 
 function hexToRgba(hex: string, alpha: number = 1): ColorRGBA {
@@ -64,6 +65,7 @@ export function PadGraph({
   heavyThreshold,
   cutoffThreshold,
   showHeavy,
+  numPoints = 500,
 }: PadGraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +82,6 @@ export function PadGraph({
   const isPanningRef = useRef(false);
   const lastPanPosRef = useRef({ x: 0, y: 0 });
 
-  const numPoints = 500;
   const maxADC = 4095;
 
   // Calculate visible ranges based on zoom
@@ -312,7 +313,7 @@ export function PadGraph({
       rawLineRef.current = null;
       deltaLineRef.current = null;
     };
-  }, [pad]);
+  }, [pad, numPoints]);
 
   // Add wheel and pan event listeners
   useEffect(() => {
@@ -406,7 +407,7 @@ export function PadGraph({
       <CardContent className="p-0 overflow-hidden h-64">
         <div className="flex h-full">
           {/* Y-Axis Column */}
-          <div className="flex flex-col flex-shrink-0" style={{ width: "2.5rem" }}>
+          <div className="flex flex-col shrink-0" style={{ width: "2.5rem" }}>
             {/* Y-Axis Labels - flex-1 to match plot height */}
             <div className="relative bg-black flex-1">
               {yTicks.map((tick) => {
