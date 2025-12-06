@@ -4,7 +4,7 @@ import { PadGraph } from "./PadGraph";
 import { PAD_NAMES } from "@/types";
 
 export function LiveMonitorTab() {
-  const { graphData, config, maxBufferSize } = useDevice();
+  const { buffers, updateTrigger, config, maxBufferSize } = useDevice();
 
   return (
     <div className="space-y-4">
@@ -17,12 +17,14 @@ export function LiveMonitorTab() {
           <PadGraph
             key={pad}
             pad={pad}
-            data={graphData[pad]}
+            buffer={buffers.current[pad]}
+            updateTrigger={updateTrigger}
             lightThreshold={config.pads[pad].light}
             heavyThreshold={config.pads[pad].heavy}
             cutoffThreshold={config.pads[pad].cutoff}
             showHeavy={config.doubleInputMode}
             numPoints={maxBufferSize}
+            displayPoints={500}
           />
         ))}
       </div>

@@ -52,13 +52,24 @@ export interface StreamFrame {
   pads: Record<PadName, PadStreamData>;
 }
 
-// Graph Data Point
+// Graph Data Point (legacy - kept for compatibility)
 export interface PadGraphPoint {
   time: number;
   raw: number;
   delta: number;
   duration: number;
 }
+
+// Zero-allocation buffer for streaming data
+export interface PadBuffer {
+  raw: Float32Array;
+  delta: Float32Array;
+  head: number;  // Next write position (circular)
+  count: number; // Number of valid entries (0 to capacity)
+  capacity: number;
+}
+
+export type PadBuffers = Record<PadName, PadBuffer>;
 
 // Configuration Types
 export interface PadThresholds {

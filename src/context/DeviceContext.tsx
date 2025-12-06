@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
 import { useDeviceStreaming } from "@/hooks/useDeviceStreaming";
@@ -10,7 +10,7 @@ import type {
   PadThresholds,
   TimingConfig,
   StreamFrame,
-  PadGraphPoint,
+  PadBuffers,
 } from "@/types";
 
 interface DeviceContextValue {
@@ -35,10 +35,11 @@ interface DeviceContextValue {
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
 
-  // Streaming
+  // Streaming (zero-allocation buffer system)
   isStreaming: boolean;
   latestFrame: StreamFrame | null;
-  graphData: Record<PadName, PadGraphPoint[]>;
+  buffers: RefObject<PadBuffers>;  // Direct access to Float32Array buffers
+  updateTrigger: number;            // Increments to trigger re-renders
   startStreaming: () => Promise<void>;
   stopStreaming: () => Promise<void>;
   clearData: () => void;
@@ -93,10 +94,11 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       updateTiming: deviceConfig.updateTiming,
       setDoubleInputMode: deviceConfig.setDoubleInputMode,
 
-      // Streaming
+      // Streaming (zero-allocation buffer system)
       isStreaming: streaming.isStreaming,
       latestFrame: streaming.latestFrame,
-      graphData: streaming.graphData,
+      buffers: streaming.buffers,
+      updateTrigger: streaming.updateTrigger,
       startStreaming: streaming.startStreaming,
       stopStreaming: streaming.stopStreaming,
       clearData: streaming.clearData,
