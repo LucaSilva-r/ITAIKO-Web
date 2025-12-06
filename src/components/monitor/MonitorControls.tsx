@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Play, Square, Trash2 } from "lucide-react";
+import { Play, Pause, Trash2 } from "lucide-react";
 import {
   HISTORY_BUFFER_MIN,
   HISTORY_BUFFER_MAX,
@@ -20,7 +20,7 @@ export function MonitorControls() {
     setMaxBufferSize,
   } = useDevice();
 
-  const handleToggleStreaming = async () => {
+  const handleTogglePause = async () => {
     if (isStreaming) {
       await stopStreaming();
     } else {
@@ -31,22 +31,22 @@ export function MonitorControls() {
   return (
     <Card>
       <CardContent className="flex flex-wrap items-center gap-6 py-4">
-        {/* Stream Control */}
+        {/* Pause/Resume Control */}
         <div className="flex items-center gap-2">
           <Button
-            variant={isStreaming ? "destructive" : "default"}
-            onClick={handleToggleStreaming}
+            variant={isStreaming ? "secondary" : "default"}
+            onClick={handleTogglePause}
             disabled={!isConnected}
           >
             {isStreaming ? (
               <>
-                <Square className="h-4 w-4 mr-2" />
-                Stop
+                <Pause className="h-4 w-4 mr-2" />
+                Pause
               </>
             ) : (
               <>
                 <Play className="h-4 w-4 mr-2" />
-                Start
+                Resume
               </>
             )}
           </Button>
@@ -54,7 +54,6 @@ export function MonitorControls() {
           <Button
             variant="outline"
             onClick={clearData}
-            disabled={isStreaming}
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Clear

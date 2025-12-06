@@ -44,6 +44,7 @@ export const PAD_COLORS: Record<PadName, string> = {
 export interface PadStreamData {
   triggered: boolean;
   raw: number;
+  delta: number;
   duration: number;
 }
 

@@ -27,6 +27,7 @@ export function parseStreamLine(line: string): StreamFrame | null {
     pads[pad] = {
       triggered: triggeredChar === "T" || triggeredChar === "1",
       raw,
+      delta: 0, // Will be calculated by streaming hook
       duration,
     };
   });

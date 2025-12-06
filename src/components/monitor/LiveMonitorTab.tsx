@@ -1,10 +1,24 @@
+import { useEffect, useRef } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import { MonitorControls } from "./MonitorControls";
 import { PadGraph } from "./PadGraph";
 import { PAD_NAMES } from "@/types";
 
 export function LiveMonitorTab() {
-  const { buffers, updateTrigger, config, maxBufferSize } = useDevice();
+  const { buffers, updateTrigger, config, maxBufferSize, isConnected, startStreaming } = useDevice();
+
+  // Use ref to always have latest function without causing effect re-runs
+  const startStreamingRef = useRef(startStreaming);
+  useEffect(() => {
+    startStreamingRef.current = startStreaming;
+  });
+
+  // Always start streaming when entering this tab (ignore previous pause state)
+  useEffect(() => {
+    if (isConnected) {
+      startStreamingRef.current();
+    }
+  }, [isConnected]);
 
   return (
     <div className="space-y-4">

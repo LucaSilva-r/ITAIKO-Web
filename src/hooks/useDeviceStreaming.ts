@@ -150,7 +150,17 @@ export function useDeviceStreaming({
     // Throttled latestFrame update (~30fps) - this is for the numeric display only
     if (now - lastFrameUpdateRef.current >= FRAME_THROTTLE_MS) {
       lastFrameUpdateRef.current = now;
-      setLatestFrame(frame);
+      // Add delta values to the frame
+      const frameWithDelta: StreamFrame = {
+        ...frame,
+        pads: {
+          kaLeft: { ...frame.pads.kaLeft, delta: buffers.kaLeft.delta[(buffers.kaLeft.head - 1 + buffers.kaLeft.capacity) % buffers.kaLeft.capacity] },
+          donLeft: { ...frame.pads.donLeft, delta: buffers.donLeft.delta[(buffers.donLeft.head - 1 + buffers.donLeft.capacity) % buffers.donLeft.capacity] },
+          donRight: { ...frame.pads.donRight, delta: buffers.donRight.delta[(buffers.donRight.head - 1 + buffers.donRight.capacity) % buffers.donRight.capacity] },
+          kaRight: { ...frame.pads.kaRight, delta: buffers.kaRight.delta[(buffers.kaRight.head - 1 + buffers.kaRight.capacity) % buffers.kaRight.capacity] },
+        },
+      };
+      setLatestFrame(frameWithDelta);
     }
   }, []);
 

@@ -1,9 +1,23 @@
+import { useEffect, useRef } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PAD_LABELS, PAD_COLORS, PAD_NAMES } from "@/types";
 
 export function VisualDrumTab() {
-  const { latestFrame, isStreaming } = useDevice();
+  const { latestFrame, isConnected, startStreaming } = useDevice();
+
+  // Use ref to always have latest function without causing effect re-runs
+  const startStreamingRef = useRef(startStreaming);
+  useEffect(() => {
+    startStreamingRef.current = startStreaming;
+  });
+
+  // Always start streaming when entering this tab
+  useEffect(() => {
+    if (isConnected) {
+      startStreamingRef.current();
+    }
+  }, [isConnected]);
 
   // Dim colors for inactive state
   const getDimColor = (color: string) => {
@@ -100,7 +114,7 @@ export function VisualDrumTab() {
             <div className="grid grid-cols-4 gap-4">
               {PAD_NAMES.map((pad) => {
                 const isActive = latestFrame?.pads[pad].triggered ?? false;
-                const rawValue = latestFrame?.pads[pad].raw ?? 0;
+                const deltaValue = latestFrame?.pads[pad].delta ?? 0;
 
                 return (
                   <div
@@ -118,16 +132,16 @@ export function VisualDrumTab() {
                     <span className="text-xs text-muted-foreground">
                       {PAD_LABELS[pad]}
                     </span>
-                    <span className="text-xs font-mono">{rawValue}</span>
+                    <span className="text-xs font-mono">{deltaValue}</span>
                   </div>
                 );
               })}
             </div>
 
             {/* Status Message */}
-            {!isStreaming && (
+            {!isConnected && (
               <p className="text-sm text-muted-foreground">
-                Start streaming in Live Monitor to see pad activity
+                Connect the drum to see pad activity
               </p>
             )}
           </div>

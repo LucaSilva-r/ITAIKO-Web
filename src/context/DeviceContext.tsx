@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useEffect, useRef } from "react";
 import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
@@ -70,6 +70,18 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
     stopReading: serial.stopReading,
     isConnected,
   });
+
+  // Track previous connection state to detect new connections
+  const wasConnectedRef = useRef(false);
+
+  // Auto-read config when device connects
+  useEffect(() => {
+    if (isConnected && !wasConnectedRef.current) {
+      // Just connected - read config from device
+      deviceConfig.readFromDevice();
+    }
+    wasConnectedRef.current = isConnected;
+  }, [isConnected, deviceConfig.readFromDevice]);
 
   const value = useMemo<DeviceContextValue>(
     () => ({

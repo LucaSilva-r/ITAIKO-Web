@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +9,18 @@ import { ConfigActions } from "./ConfigActions";
 import { PAD_NAMES } from "@/types";
 
 export function ConfigurationTab() {
-  const { config, setDoubleInputMode, isConnected } = useDevice();
+  const { config, setDoubleInputMode, isConnected, stopStreaming } = useDevice();
+
+  // Use ref to always have latest function without causing effect re-runs
+  const stopStreamingRef = useRef(stopStreaming);
+  useEffect(() => {
+    stopStreamingRef.current = stopStreaming;
+  });
+
+  // Stop streaming when entering config tab
+  useEffect(() => {
+    stopStreamingRef.current();
+  }, []);
 
   return (
     <div className="space-y-6">
