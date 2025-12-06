@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom"; // 1. Import hook
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceProvider } from "@/context/DeviceContext";
@@ -8,13 +8,25 @@ import { LiveMonitorTab } from "@/components/monitor/LiveMonitorTab";
 import { VisualDrumTab } from "@/components/visual/VisualDrumTab";
 
 function ConfigurePageContent() {
+  // 2. Initialize the search params hook
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // 3. Determine the current tab. 
+  // If 'tab' param exists, use it; otherwise default to "config"
+  const currentTab = searchParams.get("tab") || "config";
+
+  // 4. Create a handler to update the URL when the tab changes
+  const onTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
+  
   return (
     <div className="min-h-screen flex flex-col w-full items-center">
       {/* Header */}
       <header className="border-b w-full">
         <div className="flex h-14 items-center justify-between p-4">
           <Link to="/" className="font-bold text-xl">
-            <img src="itaiko.png" className="pixelated drag-none" ></img>
+            <img src="itaiko.png" className="pixelated drag-none" alt="Logo" />
           </Link>
           <nav className="flex items-center gap-4">
             <Button variant="ghost" asChild>
@@ -32,7 +44,12 @@ function ConfigurePageContent() {
         </div>
 
         {/* Main Tabs */}
-        <Tabs defaultValue="config" className="space-y-4">
+        {/* 5. Switch from 'defaultValue' to controlled 'value' and 'onValueChange' */}
+        <Tabs 
+          value={currentTab} 
+          onValueChange={onTabChange} 
+          className="space-y-4"
+        >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="monitor">Live Monitor</TabsTrigger>
             <TabsTrigger value="config">Configuration</TabsTrigger>
