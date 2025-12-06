@@ -34,7 +34,10 @@ export function useWebSerial(): UseWebSerialReturn {
 
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const writerRef = useRef<WritableStreamDefaultWriter<Uint8Array> | null>(null);
-  const bufferRef = useRef("");
+  const rawBufferRef = useRef(""); // Raw incoming bytes buffer
+
+  // Queue for lines when no streaming callback is set
+  const lineQueueRef = useRef<string[]>([]);
 
   // Callback ref - allows swapping the callback without restarting the loop
   const onDataCallbackRef = useRef<((line: string) => void) | null>(null);
@@ -59,16 +62,26 @@ export function useWebSerial(): UseWebSerialReturn {
             break;
           }
 
-          bufferRef.current += decodeResponse(value);
+          rawBufferRef.current += decodeResponse(value);
 
           // Process all complete lines
           let newlineIndex: number;
-          while ((newlineIndex = bufferRef.current.indexOf("\n")) !== -1) {
-            const line = bufferRef.current.slice(0, newlineIndex).trim();
-            bufferRef.current = bufferRef.current.slice(newlineIndex + 1);
-            // Only call callback if one is set (streaming is active)
-            if (line && onDataCallbackRef.current) {
-              onDataCallbackRef.current(line);
+          while ((newlineIndex = rawBufferRef.current.indexOf("\n")) !== -1) {
+            const line = rawBufferRef.current.slice(0, newlineIndex).trim();
+            rawBufferRef.current = rawBufferRef.current.slice(newlineIndex + 1);
+
+            if (line) {
+              if (onDataCallbackRef.current) {
+                // Streaming mode: pass to callback
+                onDataCallbackRef.current(line);
+              } else {
+                // Non-streaming mode: queue for readLine/readUntilTimeout
+                lineQueueRef.current.push(line);
+                // Limit queue size to prevent memory issues if lines pile up
+                if (lineQueueRef.current.length > 1000) {
+                  lineQueueRef.current.shift();
+                }
+              }
             }
           }
         } catch (err) {
@@ -163,7 +176,8 @@ export function useWebSerial(): UseWebSerialReturn {
       console.error("Error during disconnect:", err);
     }
 
-    bufferRef.current = "";
+    rawBufferRef.current = "";
+    lineQueueRef.current = [];
     setStatus("disconnected");
     setError(null);
   }, [port]);
@@ -184,64 +198,54 @@ export function useWebSerial(): UseWebSerialReturn {
     []
   );
 
+  // Read a single line from the queue (non-blocking)
   const readLine = useCallback(async (): Promise<string | null> => {
-    if (!readerRef.current) {
-      return null;
+    // Return from queue if available
+    if (lineQueueRef.current.length > 0) {
+      return lineQueueRef.current.shift() ?? null;
     }
 
-    // Check buffer first
-    const newlineIndex = bufferRef.current.indexOf("\n");
-    if (newlineIndex !== -1) {
-      const line = bufferRef.current.slice(0, newlineIndex);
-      bufferRef.current = bufferRef.current.slice(newlineIndex + 1);
-      return line.trim();
+    // Wait a bit for data to arrive
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Check again
+    if (lineQueueRef.current.length > 0) {
+      return lineQueueRef.current.shift() ?? null;
     }
 
-    // Read more data
-    try {
-      const { value, done } = await readerRef.current.read();
-      if (done) {
-        return null;
-      }
-
-      bufferRef.current += decodeResponse(value);
-
-      // Check for newline again
-      const idx = bufferRef.current.indexOf("\n");
-      if (idx !== -1) {
-        const line = bufferRef.current.slice(0, idx);
-        bufferRef.current = bufferRef.current.slice(idx + 1);
-        return line.trim();
-      }
-
-      return null;
-    } catch {
-      return null;
-    }
+    return null;
   }, []);
 
+  // Read all lines until timeout
   const readUntilTimeout = useCallback(
     async (timeoutMs: number = 500): Promise<string> => {
       const startTime = Date.now();
-      let result = "";
+      const lines: string[] = [];
+
+      // Clear any existing queued lines first (stale data)
+      lineQueueRef.current = [];
 
       while (Date.now() - startTime < timeoutMs) {
-        const line = await readLine();
-        if (line) {
-          result += line + "\n";
+        if (lineQueueRef.current.length > 0) {
+          const line = lineQueueRef.current.shift();
+          if (line) {
+            lines.push(line);
+          }
         } else {
           await new Promise((resolve) => setTimeout(resolve, 10));
         }
       }
 
-      return result;
+      return lines.join("\n");
     },
-    [readLine]
+    []
   );
 
   // Start reading: just set the callback - the loop is already running
   const startReading = useCallback(
     (onData: (line: string) => void): void => {
+      // Clear line queue since we're switching to streaming mode
+      lineQueueRef.current = [];
       onDataCallbackRef.current = onData;
       setIsReading(true);
 
