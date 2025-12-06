@@ -381,8 +381,8 @@ export function PadGraph({
 
   return (
     <Card className="overflow-hidden relative gap-0 p-0">
-      <CardHeader className="py-2! border-b-accent border-b">
-        <CardTitle className="flex items-center justify-between text-sm">
+      <CardHeader className="py-4! border-b-accent border-b items-center align-middle flex">
+        <CardTitle className="flex items-center justify-between text-sm w-full">
           <div className="flex items-center gap-2">
             <div
               className="w-2 h-2 rounded-full"
