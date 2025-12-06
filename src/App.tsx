@@ -1,17 +1,18 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { Button } from './components/ui/button'
+import { Routes, Route } from "react-router-dom";
+import { LandingPage } from "./pages/LandingPage";
+import { ConfigurePage } from "./pages/ConfigurePage";
+import { ThemeProvider } from "./components/theme-provider";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <Button >Nice</Button>
-    </>
-  )
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/configure" element={<ConfigurePage />} />
+      </Routes>
+    </ThemeProvider>
+
+  );
 }
 
-export default App
+export default App;
