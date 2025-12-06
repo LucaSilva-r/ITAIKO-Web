@@ -25,7 +25,7 @@ function ConfigurePageContent() {
       </header>
 
       {/* Main Content */}
-      <main className="w-5xl py-6">
+      <main className="px-4 w-full max-w-5xl py-6">
         {/* Connection Panel */}
         <div className="mb-6">
           <ConnectionPanel />
