@@ -9,12 +9,12 @@ import { VisualDrumTab } from "@/components/visual/VisualDrumTab";
 
 function ConfigurePageContent() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col w-full items-center">
       {/* Header */}
-      <header className="border-b">
-        <div className="container flex h-14 items-center justify-between">
+      <header className="border-b w-full">
+        <div className="flex h-14 items-center justify-between p-4">
           <Link to="/" className="font-bold text-xl">
-            ITAIKO
+            <img src="itaiko.png" className="pixelated drag-none" ></img>
           </Link>
           <nav className="flex items-center gap-4">
             <Button variant="ghost" asChild>
@@ -25,7 +25,7 @@ function ConfigurePageContent() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container py-6">
+      <main className="w-5xl py-6">
         {/* Connection Panel */}
         <div className="mb-6">
           <ConnectionPanel />

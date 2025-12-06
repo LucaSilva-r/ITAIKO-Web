@@ -9,8 +9,8 @@ export function LandingPage() {
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center gap-12 p-8">
-        <div className="text-center space-y-4">
-          <h1 className="text-7xl font-bold tracking-tighter">ITAIKO</h1>
+        <div className="text-center space-y-4 items-center flex flex-col">
+          <img src="itaiko.png" className="pixelated w-96 drag-none" ></img>
           <p className="text-xl text-muted-foreground max-w-lg mx-auto">
             Configure and calibrate your custom Taiko drum controller directly
             from your browser.

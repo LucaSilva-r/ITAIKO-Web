@@ -118,3 +118,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+@utility pixelated {
+  /* Firefox */
+  image-rendering: -moz-crisp-edges;
+  
+  /* Legacy WebKit (Safari/Chrome) */
+  image-rendering: -webkit-optimize-contrast;
+  
+  /* IE (just in case) */
+  -ms-interpolation-mode: nearest-neighbor;
+  
+  /* Standard property (Chrome, Edge, Safari, Firefox) */
+  image-rendering: pixelated;
+}
+
+@utility drag-none {
+  user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
