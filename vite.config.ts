@@ -8,7 +8,7 @@ export default defineConfig({
   // Set base path for GitHub Pages deployment
   // Change this to your repository name if deploying to https://username.github.io/repo-name/
   // Leave as '/' if deploying to a custom domain or https://username.github.io/
-  base: '/ITAIKO-Web/',
+  base: '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
