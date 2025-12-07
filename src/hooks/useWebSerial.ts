@@ -39,6 +39,9 @@ export function useWebSerial(): UseWebSerialReturn {
 
   const isSupported = typeof navigator !== "undefined" && "serial" in navigator;
 
+  // Track if we're in the middle of a user-initiated disconnect
+  const disconnectingRef = useRef(false);
+
   const startReadLoop = useCallback(() => {
     if (loopRunningRef.current || !readerRef.current) return;
 
@@ -46,7 +49,7 @@ export function useWebSerial(): UseWebSerialReturn {
 
     const readLoop = async () => {
       let buffer = "";
-      
+
       while (loopRunningRef.current && readerRef.current) {
         try {
           // Read already-decoded strings! No manual TextDecoder needed.
@@ -75,7 +78,20 @@ export function useWebSerial(): UseWebSerialReturn {
             }
           }
         } catch (err) {
-          console.error("Read error:", err);
+          // Device was unplugged or lost - trigger disconnect if not already disconnecting
+          if (!disconnectingRef.current) {
+            console.error("Device lost:", err);
+            loopRunningRef.current = false;
+            onDataCallbackRef.current = null;
+            setIsReading(false);
+            decoderReadableStreamRef.current = null;
+            inputDoneRef.current = null;
+            readerRef.current = null;
+            writerRef.current = null;
+            lineQueueRef.current = [];
+            setStatus("disconnected");
+            setError("Device disconnected");
+          }
           break;
         }
       }
@@ -140,6 +156,8 @@ export function useWebSerial(): UseWebSerialReturn {
   }, [port, startReadLoop]);
 
   const disconnect = useCallback(async (): Promise<void> => {
+    // Mark that we're intentionally disconnecting (prevents read loop from setting error)
+    disconnectingRef.current = true;
     loopRunningRef.current = false;
     onDataCallbackRef.current = null;
     setIsReading(false);
@@ -175,6 +193,7 @@ export function useWebSerial(): UseWebSerialReturn {
 
     decoderReadableStreamRef.current = null;
     lineQueueRef.current = [];
+    disconnectingRef.current = false;
     setStatus("disconnected");
     setError(null);
   }, [port]);
