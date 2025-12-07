@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./typeface.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -139,4 +140,8 @@
   -khtml-user-drag: none;
   -moz-user-drag: none;
   -o-user-drag: none;
+}
+
+@utility garamond {
+  font-family: 'Apple Garamond';
 }
