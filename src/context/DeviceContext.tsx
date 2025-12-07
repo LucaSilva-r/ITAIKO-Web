@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useEffect, useRef } from "react";
+import { createContext, useContext, useMemo, useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
@@ -18,6 +18,7 @@ interface DeviceContextValue {
   error: string | null;
   isSupported: boolean;
   isConnected: boolean;
+  isReady: boolean;  // True after initial config read completes
   requestPort: () => Promise<SerialPort | null>;
   connect: () => Promise<boolean>;
   disconnect: () => Promise<void>;
@@ -36,7 +37,7 @@ interface DeviceContextValue {
 
   // Streaming
   isStreaming: boolean;
-  triggers: TriggerState;  // Simple: just which pads are active
+  triggers: TriggerState;
   buffers: RefObject<PadBuffers>;
   startStreaming: () => Promise<void>;
   stopStreaming: () => Promise<void>;
@@ -53,6 +54,7 @@ interface DeviceProviderProps {
 
 export function DeviceProvider({ children }: DeviceProviderProps) {
   const serial = useWebSerial();
+  const [isReady, setIsReady] = useState(false);
 
   const isConnected = serial.status === "connected";
 
@@ -75,7 +77,14 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
   // Auto-read config when device connects
   useEffect(() => {
     if (isConnected && !wasConnectedRef.current) {
-      deviceConfig.readFromDevice();
+      // New connection - read config first
+      setIsReady(false);
+      deviceConfig.readFromDevice().then(() => {
+        setIsReady(true);
+      });
+    } else if (!isConnected) {
+      // Disconnected
+      setIsReady(false);
     }
     wasConnectedRef.current = isConnected;
   }, [isConnected, deviceConfig.readFromDevice]);
@@ -87,6 +96,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       error: serial.error,
       isSupported: serial.isSupported,
       isConnected,
+      isReady,
       requestPort: serial.requestPort,
       connect: serial.connect,
       disconnect: serial.disconnect,
@@ -113,7 +123,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       maxBufferSize: streaming.maxBufferSize,
       setMaxBufferSize: streaming.setMaxBufferSize,
     }),
-    [serial, deviceConfig, streaming, isConnected]
+    [serial, deviceConfig, streaming, isConnected, isReady]
   );
 
   return (

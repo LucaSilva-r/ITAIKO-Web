@@ -12,7 +12,7 @@ const DIM_COLORS = {
 };
 
 export function VisualDrumTab() {
-  const { triggers, isConnected, startStreaming } = useDevice();
+  const { triggers, isConnected, isReady, startStreaming } = useDevice();
 
   // Use ref to always have latest function without causing effect re-runs
   const startStreamingRef = useRef(startStreaming);
@@ -20,12 +20,12 @@ export function VisualDrumTab() {
     startStreamingRef.current = startStreaming;
   });
 
-  // Always start streaming when entering this tab
+  // Start streaming when device is ready (after config read)
   useEffect(() => {
-    if (isConnected) {
+    if (isReady) {
       startStreamingRef.current();
     }
-  }, [isConnected]);
+  }, [isReady]);
 
   return (
     <div className="space-y-4">

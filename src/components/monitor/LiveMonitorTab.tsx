@@ -5,7 +5,7 @@ import { PadGraph } from "./PadGraph";
 import { PAD_NAMES } from "@/types";
 
 export function LiveMonitorTab() {
-  const { buffers, config, maxBufferSize, isConnected, startStreaming } = useDevice();
+  const { buffers, config, maxBufferSize, isReady, startStreaming } = useDevice();
 
   // Use ref to always have latest function without causing effect re-runs
   const startStreamingRef = useRef(startStreaming);
@@ -13,12 +13,12 @@ export function LiveMonitorTab() {
     startStreamingRef.current = startStreaming;
   });
 
-  // Always start streaming when entering this tab (ignore previous pause state)
+  // Start streaming when device is ready (after config read)
   useEffect(() => {
-    if (isConnected) {
+    if (isReady) {
       startStreamingRef.current();
     }
-  }, [isConnected]);
+  }, [isReady]);
 
   return (
     <div className="space-y-4">
