@@ -9,7 +9,6 @@ import { PAD_LABELS, PAD_COLORS } from "@/types";
 interface PadGraphProps {
   pad: PadName;
   buffer: PadBuffer;          // Zero-allocation Float32Array buffer
-  updateTrigger: number;      // Increments to trigger re-renders
   lightThreshold: number;
   heavyThreshold: number;
   cutoffThreshold: number;
@@ -73,7 +72,6 @@ function readFromCircularBuffer(
 export function PadGraph({
   pad,
   buffer,
-  updateTrigger,
   lightThreshold,
   heavyThreshold,
   cutoffThreshold,
@@ -305,74 +303,98 @@ export function PadGraph({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ZERO-ALLOCATION RENDER: Read directly from Float32Array circular buffer
+  // Store visibleRange in ref for animation loop (avoid stale closure)
+  const visibleRangeRef = useRef(visibleRange);
   useEffect(() => {
-    const rawLine = rawLineRef.current;
-    const deltaLine = deltaLineRef.current;
-    const wglp = wglpRef.current;
+    visibleRangeRef.current = visibleRange;
+  }, [visibleRange]);
 
-    if (!rawLine || !deltaLine || !wglp || !buffer) return;
+  // SELF-DRIVING RENDER LOOP: Uses requestAnimationFrame instead of React state
+  useEffect(() => {
+    let animationId: number;
 
-    const { raw, delta, head, count, capacity } = buffer;
+    const renderFrame = () => {
+      const rawLine = rawLineRef.current;
+      const deltaLine = deltaLineRef.current;
+      const wglp = wglpRef.current;
 
-    // Calculate visible range in data space
-    const dataOffset = Math.max(0, count - numPoints);
-    const viewStart = visibleRange.xMin + dataOffset;
-    const viewEnd = visibleRange.xMax + dataOffset;
+      if (!rawLine || !deltaLine || !wglp || !buffer) {
+        animationId = requestAnimationFrame(renderFrame);
+        return;
+      }
 
-    // Clamp to valid data range
-    const clampedStart = Math.max(0, Math.floor(viewStart));
-    const clampedEnd = Math.min(count, Math.ceil(viewEnd));
-    const sourceCount = clampedEnd - clampedStart;
+      const { raw, delta, head, count, capacity } = buffer;
+      const currentVisibleRange = visibleRangeRef.current;
 
-    // Safety check - clear lines if no data
-    if (sourceCount <= 0 || displayPoints <= 0 || count === 0) {
+      // Calculate visible range in data space
+      const dataOffset = Math.max(0, count - numPoints);
+      const viewStart = currentVisibleRange.xMin + dataOffset;
+      const viewEnd = currentVisibleRange.xMax + dataOffset;
+
+      // Clamp to valid data range
+      const clampedStart = Math.max(0, Math.floor(viewStart));
+      const clampedEnd = Math.min(count, Math.ceil(viewEnd));
+      const sourceCount = clampedEnd - clampedStart;
+
+      // Safety check - clear lines if no data
+      if (sourceCount <= 0 || displayPoints <= 0 || count === 0) {
+        for (let i = 0; i < displayPoints; i++) {
+          rawLine.setX(i, -2);
+          deltaLine.setX(i, -2);
+        }
+        wglp.update();
+        animationId = requestAnimationFrame(renderFrame);
+        return;
+      }
+
+      const step = sourceCount / displayPoints;
+
+      // Direct write to WebGL buffer - ZERO allocation in this loop
       for (let i = 0; i < displayPoints; i++) {
-        rawLine.setX(i, -2);
-        deltaLine.setX(i, -2);
+        const srcStart = Math.floor(clampedStart + i * step);
+        const srcEnd = Math.min(Math.floor(clampedStart + (i + 1) * step), clampedEnd);
+
+        // Downsample by averaging
+        let rawSum = 0, deltaSum = 0, sampleCount = 0;
+        for (let j = srcStart; j < srcEnd; j++) {
+          rawSum += readFromCircularBuffer(raw, head, count, capacity, j);
+          deltaSum += readFromCircularBuffer(delta, head, count, capacity, j);
+          sampleCount++;
+        }
+
+        if (sampleCount > 0) {
+          const avgRaw = rawSum / sampleCount;
+          const avgDelta = deltaSum / sampleCount;
+          const dataX = clampedStart + (i + 0.5) * step;
+
+          // Transform to WebGL coordinates (-1 to 1)
+          const relativeX = dataX - dataOffset;
+          const webglX = (relativeX / numPoints) * 2 - 1;
+          const webglYRaw = (avgRaw / maxADC) * 2 - 1;
+          const webglYDelta = (avgDelta / maxADC) * 2 - 1;
+
+          rawLine.setX(i, webglX);
+          rawLine.setY(i, webglYRaw);
+          deltaLine.setX(i, webglX);
+          deltaLine.setY(i, webglYDelta);
+        } else {
+          rawLine.setX(i, -2);
+          deltaLine.setX(i, -2);
+        }
       }
+
       wglp.update();
-      return;
-    }
+      animationId = requestAnimationFrame(renderFrame);
+    };
 
-    const step = sourceCount / displayPoints;
+    // Start the animation loop
+    animationId = requestAnimationFrame(renderFrame);
 
-    // Direct write to WebGL buffer - ZERO allocation in this loop
-    for (let i = 0; i < displayPoints; i++) {
-      const srcStart = Math.floor(clampedStart + i * step);
-      const srcEnd = Math.min(Math.floor(clampedStart + (i + 1) * step), clampedEnd);
-
-      // Downsample by averaging
-      let rawSum = 0, deltaSum = 0, sampleCount = 0;
-      for (let j = srcStart; j < srcEnd; j++) {
-        rawSum += readFromCircularBuffer(raw, head, count, capacity, j);
-        deltaSum += readFromCircularBuffer(delta, head, count, capacity, j);
-        sampleCount++;
-      }
-
-      if (sampleCount > 0) {
-        const avgRaw = rawSum / sampleCount;
-        const avgDelta = deltaSum / sampleCount;
-        const dataX = clampedStart + (i + 0.5) * step;
-
-        // Transform to WebGL coordinates (-1 to 1)
-        const relativeX = dataX - dataOffset;
-        const webglX = (relativeX / numPoints) * 2 - 1;
-        const webglYRaw = (avgRaw / maxADC) * 2 - 1;
-        const webglYDelta = (avgDelta / maxADC) * 2 - 1;
-
-        rawLine.setX(i, webglX);
-        rawLine.setY(i, webglYRaw);
-        deltaLine.setX(i, webglX);
-        deltaLine.setY(i, webglYDelta);
-      } else {
-        rawLine.setX(i, -2);
-        deltaLine.setX(i, -2);
-      }
-    }
-
-    wglp.update();
-  }, [updateTrigger, buffer, visibleRange, displayPoints, numPoints, maxADC]);
+    // Cleanup on unmount
+    return () => {
+      cancelAnimationFrame(animationId);
+    };
+  }, [buffer, displayPoints, numPoints, maxADC]);
 
   // Calculate threshold line positions
   const lightPos = dataToScreenY(lightThreshold);

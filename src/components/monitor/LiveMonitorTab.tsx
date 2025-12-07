@@ -5,7 +5,7 @@ import { PadGraph } from "./PadGraph";
 import { PAD_NAMES } from "@/types";
 
 export function LiveMonitorTab() {
-  const { buffers, updateTrigger, config, maxBufferSize, isConnected, startStreaming } = useDevice();
+  const { buffers, config, maxBufferSize, isConnected, startStreaming } = useDevice();
 
   // Use ref to always have latest function without causing effect re-runs
   const startStreamingRef = useRef(startStreaming);
@@ -32,7 +32,6 @@ export function LiveMonitorTab() {
             key={pad}
             pad={pad}
             buffer={buffers.current[pad]}
-            updateTrigger={updateTrigger}
             lightThreshold={config.pads[pad].light}
             heavyThreshold={config.pads[pad].heavy}
             cutoffThreshold={config.pads[pad].cutoff}

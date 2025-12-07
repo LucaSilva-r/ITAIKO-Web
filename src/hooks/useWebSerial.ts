@@ -1,26 +1,19 @@
 import { useState, useCallback, useRef, type RefObject } from "react";
 import type { ConnectionStatus, DeviceCommand } from "@/types";
 import { PICO_VENDOR_ID, BAUD_RATE } from "@/types";
-import { encodeCommand, decodeResponse } from "@/lib/serial-protocol";
+import { encodeCommand } from "@/lib/serial-protocol";
 
 interface UseWebSerialReturn {
-  // State
   status: ConnectionStatus;
   error: string | null;
   isSupported: boolean;
-
-  // Port management
   port: RefObject<SerialPort | null>;
   requestPort: () => Promise<SerialPort | null>;
   connect: () => Promise<boolean>;
   disconnect: () => Promise<void>;
-
-  // Communication
   sendCommand: (command: DeviceCommand, data?: string) => Promise<void>;
   readLine: () => Promise<string | null>;
   readUntilTimeout: (timeoutMs?: number) => Promise<string>;
-
-  // Stream reading
   startReading: (onData: (line: string) => void) => void;
   stopReading: () => void;
   isReading: boolean;
@@ -32,66 +25,60 @@ export function useWebSerial(): UseWebSerialReturn {
   const port = useRef<SerialPort | null>(null);
   const [isReading, setIsReading] = useState(false);
 
-  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
+  // We use a ReadableStream reader that returns strings directly
+  const readerRef = useRef<ReadableStreamDefaultReader<string> | null>(null);
   const writerRef = useRef<WritableStreamDefaultWriter<Uint8Array> | null>(null);
-  const rawBufferRef = useRef(""); // Raw incoming bytes buffer
+  
+  // Keep the decoder in a ref so we can close it properly
+  const decoderReadableStreamRef = useRef<ReadableStream<string> | null>(null);
+  const inputDoneRef = useRef<Promise<void> | null>(null);
 
-  // Queue for lines when no streaming callback is set
   const lineQueueRef = useRef<string[]>([]);
-
-  // Callback ref - allows swapping the callback without restarting the loop
   const onDataCallbackRef = useRef<((line: string) => void) | null>(null);
   const loopRunningRef = useRef(false);
 
   const isSupported = typeof navigator !== "undefined" && "serial" in navigator;
 
-  // Internal function to start the read loop (called once on connect)
   const startReadLoop = useCallback(() => {
-    if (loopRunningRef.current || !readerRef.current) {
-      return;
-    }
+    if (loopRunningRef.current || !readerRef.current) return;
 
     loopRunningRef.current = true;
 
     const readLoop = async () => {
+      let buffer = "";
+      
       while (loopRunningRef.current && readerRef.current) {
         try {
+          // Read already-decoded strings! No manual TextDecoder needed.
           const { value, done } = await readerRef.current.read();
 
-          if (done || !loopRunningRef.current) {
-            break;
-          }
+          if (done) break;
 
-          rawBufferRef.current += decodeResponse(value);
+          if (value) {
+            buffer += value;
+            let newlineIndex;
+            // Process lines
+            while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
+              const line = buffer.slice(0, newlineIndex).trim();
+              buffer = buffer.slice(newlineIndex + 1);
 
-          // Process all complete lines
-          let newlineIndex: number;
-          while ((newlineIndex = rawBufferRef.current.indexOf("\n")) !== -1) {
-            const line = rawBufferRef.current.slice(0, newlineIndex).trim();
-            rawBufferRef.current = rawBufferRef.current.slice(newlineIndex + 1);
-
-            if (line) {
-              if (onDataCallbackRef.current) {
-                // Streaming mode: pass to callback
-                onDataCallbackRef.current(line);
-              } else {
-                // Non-streaming mode: queue for readLine/readUntilTimeout
-                lineQueueRef.current.push(line);
-                // Limit queue size to prevent memory issues if lines pile up
-                if (lineQueueRef.current.length > 1000) {
-                  lineQueueRef.current.shift();
+              if (line) {
+                if (onDataCallbackRef.current) {
+                  onDataCallbackRef.current(line);
+                } else {
+                  lineQueueRef.current.push(line);
+                  if (lineQueueRef.current.length > 1000) {
+                    lineQueueRef.current.shift();
+                  }
                 }
               }
             }
           }
         } catch (err) {
-          if (loopRunningRef.current) {
-            console.error("Read error:", err);
-          }
+          console.error("Read error:", err);
           break;
         }
       }
-
       loopRunningRef.current = false;
     };
 
@@ -100,10 +87,9 @@ export function useWebSerial(): UseWebSerialReturn {
 
   const requestPort = useCallback(async (): Promise<SerialPort | null> => {
     if (!isSupported) {
-      setError("WebSerial is not supported in this browser");
+      setError("WebSerial is not supported");
       return null;
     }
-
     try {
       const selectedPort = await navigator.serial.requestPort({
         filters: [{ usbVendorId: PICO_VENDOR_ID }],
@@ -112,9 +98,7 @@ export function useWebSerial(): UseWebSerialReturn {
       setError(null);
       return selectedPort;
     } catch (err) {
-      if (err instanceof Error && err.name !== "NotFoundError") {
-        setError(err.message);
-      }
+      if (err instanceof Error && err.name !== "NotFoundError") setError(err.message);
       return null;
     }
   }, [isSupported]);
@@ -128,31 +112,34 @@ export function useWebSerial(): UseWebSerialReturn {
     try {
       setStatus("connecting");
       setError(null);
-
       await port.current.open({ baudRate: BAUD_RATE });
 
       if (port.current.readable && port.current.writable) {
-        readerRef.current = port.current.readable.getReader();
+        // Create a text decoder stream to handle parsing efficiently
+        const textDecoder = new TextDecoderStream();
+        // Type assertion needed due to WebSerial/TextDecoderStream type mismatch
+        inputDoneRef.current = port.current.readable.pipeTo(
+          textDecoder.writable as WritableStream<Uint8Array>
+        );
+        decoderReadableStreamRef.current = textDecoder.readable;
+        
+        readerRef.current = textDecoder.readable.getReader();
         writerRef.current = port.current.writable.getWriter();
+        
         setStatus("connected");
-
-        // Start the read loop immediately on connect
         startReadLoop();
-
         return true;
       } else {
         throw new Error("Port streams not available");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Connection failed";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Connection failed");
       setStatus("error");
       return false;
     }
   }, [port, startReadLoop]);
 
   const disconnect = useCallback(async (): Promise<void> => {
-    // Stop the read loop
     loopRunningRef.current = false;
     onDataCallbackRef.current = null;
     setIsReading(false);
@@ -163,119 +150,56 @@ export function useWebSerial(): UseWebSerialReturn {
         readerRef.current.releaseLock();
         readerRef.current = null;
       }
-
       if (writerRef.current) {
         writerRef.current.releaseLock();
         writerRef.current = null;
       }
-
       if (port.current) {
         await port.current.close();
       }
     } catch (err) {
-      console.error("Error during disconnect:", err);
+      console.error("Error disconnect:", err);
     }
-
-    rawBufferRef.current = "";
+    
     lineQueueRef.current = [];
     setStatus("disconnected");
     setError(null);
   }, [port]);
 
-  const sendCommand = useCallback(
-    async (command: DeviceCommand, data?: string): Promise<void> => {
-      if (!writerRef.current) {
-        throw new Error("Not connected");
-      }
+  const sendCommand = useCallback(async (command: DeviceCommand, data?: string): Promise<void> => {
+      if (!writerRef.current) throw new Error("Not connected");
+      const cmdStr = data ? `${command}\n${data}\n` : `${command}\n`;
+      await writerRef.current.write(encodeCommand(cmdStr));
+    }, []);
 
-      let commandStr = `${command}\n`;
-      if (data) {
-        commandStr += `${data}\n`;
-      }
-
-      await writerRef.current.write(encodeCommand(commandStr));
-    },
-    []
-  );
-
-  // Read a single line from the queue (non-blocking)
   const readLine = useCallback(async (): Promise<string | null> => {
-    // Return from queue if available
-    if (lineQueueRef.current.length > 0) {
-      return lineQueueRef.current.shift() ?? null;
-    }
-
-    // Wait a bit for data to arrive
+    if (lineQueueRef.current.length > 0) return lineQueueRef.current.shift() ?? null;
     await new Promise((resolve) => setTimeout(resolve, 10));
-
-    // Check again
-    if (lineQueueRef.current.length > 0) {
-      return lineQueueRef.current.shift() ?? null;
-    }
-
-    return null;
+    return lineQueueRef.current.shift() ?? null;
   }, []);
 
-  // Read all lines until timeout
-  const readUntilTimeout = useCallback(
-    async (timeoutMs: number = 500): Promise<string> => {
-      const startTime = Date.now();
+  const readUntilTimeout = useCallback(async (timeoutMs: number = 500): Promise<string> => {
+      const start = Date.now();
       const lines: string[] = [];
-
-      // Clear any existing queued lines first (stale data)
       lineQueueRef.current = [];
-
-      while (Date.now() - startTime < timeoutMs) {
-        if (lineQueueRef.current.length > 0) {
-          const line = lineQueueRef.current.shift();
-          if (line) {
-            lines.push(line);
-          }
-        } else {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-        }
+      while (Date.now() - start < timeoutMs) {
+        if (lineQueueRef.current.length) lines.push(lineQueueRef.current.shift()!);
+        else await new Promise((r) => setTimeout(r, 10));
       }
-
       return lines.join("\n");
-    },
-    []
-  );
+    }, []);
 
-  // Start reading: just set the callback - the loop is already running
-  const startReading = useCallback(
-    (onData: (line: string) => void): void => {
-      // Clear line queue since we're switching to streaming mode
+  const startReading = useCallback((onData: (line: string) => void): void => {
       lineQueueRef.current = [];
       onDataCallbackRef.current = onData;
       setIsReading(true);
+      if (!loopRunningRef.current && readerRef.current) startReadLoop();
+    }, [startReadLoop]);
 
-      // Restart loop if it stopped (e.g., due to an error)
-      if (!loopRunningRef.current && readerRef.current) {
-        startReadLoop();
-      }
-    },
-    [startReadLoop]
-  );
-
-  // Stop reading: just clear the callback - the loop keeps running
   const stopReading = useCallback((): void => {
     onDataCallbackRef.current = null;
     setIsReading(false);
   }, []);
 
-  return {
-    status,
-    error,
-    isSupported,
-    port,
-    requestPort,
-    connect,
-    disconnect,
-    sendCommand,
-    readLine,
-    readUntilTimeout,
-    startReading,
-    stopReading,
-    isReading,
-  };
+  return { status, error, isSupported, port, requestPort, connect, disconnect, sendCommand, readLine, readUntilTimeout, startReading, stopReading, isReading };
 }

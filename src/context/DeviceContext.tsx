@@ -2,14 +2,13 @@ import { createContext, useContext, useMemo, useEffect, useRef } from "react";
 import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
-import { useDeviceStreaming } from "@/hooks/useDeviceStreaming";
+import { useDeviceStreaming, type TriggerState } from "@/hooks/useDeviceStreaming";
 import type {
   ConnectionStatus,
   DeviceConfig,
   PadName,
   PadThresholds,
   TimingConfig,
-  StreamFrame,
   PadBuffers,
 } from "@/types";
 
@@ -35,11 +34,10 @@ interface DeviceContextValue {
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
 
-  // Streaming (zero-allocation buffer system)
+  // Streaming
   isStreaming: boolean;
-  latestFrame: StreamFrame | null;
-  buffers: RefObject<PadBuffers>;  // Direct access to Float32Array buffers
-  updateTrigger: number;            // Increments to trigger re-renders
+  triggers: TriggerState;  // Simple: just which pads are active
+  buffers: RefObject<PadBuffers>;
   startStreaming: () => Promise<void>;
   stopStreaming: () => Promise<void>;
   clearData: () => void;
@@ -77,7 +75,6 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
   // Auto-read config when device connects
   useEffect(() => {
     if (isConnected && !wasConnectedRef.current) {
-      // Just connected - read config from device
       deviceConfig.readFromDevice();
     }
     wasConnectedRef.current = isConnected;
@@ -106,11 +103,10 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       updateTiming: deviceConfig.updateTiming,
       setDoubleInputMode: deviceConfig.setDoubleInputMode,
 
-      // Streaming (zero-allocation buffer system)
+      // Streaming
       isStreaming: streaming.isStreaming,
-      latestFrame: streaming.latestFrame,
+      triggers: streaming.triggers,
       buffers: streaming.buffers,
-      updateTrigger: streaming.updateTrigger,
       startStreaming: streaming.startStreaming,
       stopStreaming: streaming.stopStreaming,
       clearData: streaming.clearData,
