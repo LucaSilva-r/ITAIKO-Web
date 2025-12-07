@@ -7,6 +7,9 @@ import { Drum, Settings, Activity, Usb } from "lucide-react";
 export function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Wave Border */}
+      <div className="seigaiha-border" />
+
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center gap-12 p-8">
         <div className="text-center space-y-4 items-center flex flex-col">
