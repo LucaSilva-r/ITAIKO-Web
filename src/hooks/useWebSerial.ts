@@ -145,22 +145,35 @@ export function useWebSerial(): UseWebSerialReturn {
     setIsReading(false);
 
     try {
+      // 1. Cancel the reader first - this will cause pipeTo to complete
       if (readerRef.current) {
         await readerRef.current.cancel();
         readerRef.current.releaseLock();
         readerRef.current = null;
       }
+
+      // 2. Wait for the pipeTo to complete (it resolves/rejects when reader is canceled)
+      if (inputDoneRef.current) {
+        await inputDoneRef.current.catch(() => {});
+        inputDoneRef.current = null;
+      }
+
+      // 3. Release writer lock
       if (writerRef.current) {
+        await writerRef.current.close().catch(() => {});
         writerRef.current.releaseLock();
         writerRef.current = null;
       }
+
+      // 4. Now we can safely close the port
       if (port.current) {
         await port.current.close();
       }
     } catch (err) {
       console.error("Error disconnect:", err);
     }
-    
+
+    decoderReadableStreamRef.current = null;
     lineQueueRef.current = [];
     setStatus("disconnected");
     setError(null);
