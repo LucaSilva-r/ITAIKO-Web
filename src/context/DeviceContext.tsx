@@ -12,6 +12,7 @@ import {
   type PadThresholds,
   type TimingConfig,
   type PadBuffers,
+  type KeyMappings,
 } from "@/types";
 
 interface DeviceContextValue {
@@ -37,6 +38,7 @@ interface DeviceContextValue {
   updatePadThreshold: (pad: PadName, field: keyof PadThresholds, value: number) => void;
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
+  updateKeyMapping: (category: keyof KeyMappings, key: string, value: number) => void;
   rebootToBootsel: () => Promise<void>;
 
   // Streaming
@@ -179,6 +181,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       updatePadThreshold: deviceConfig.updatePadThreshold,
       updateTiming: deviceConfig.updateTiming,
       setDoubleInputMode: deviceConfig.setDoubleInputMode,
+      updateKeyMapping: deviceConfig.updateKeyMapping,
       rebootToBootsel,
 
       // Streaming

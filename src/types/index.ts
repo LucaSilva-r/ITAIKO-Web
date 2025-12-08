@@ -88,10 +88,44 @@ export interface TimingConfig {
   keyHoldTime: number; // ms (setting 8)
 }
 
+export interface KeyMappings {
+  drumP1: {
+    kaLeft: number; // HID keycode (setting 18)
+    donLeft: number; // HID keycode (setting 19)
+    donRight: number; // HID keycode (setting 20)
+    kaRight: number; // HID keycode (setting 21)
+  };
+  drumP2: {
+    kaLeft: number; // HID keycode (setting 22)
+    donLeft: number; // HID keycode (setting 23)
+    donRight: number; // HID keycode (setting 24)
+    kaRight: number; // HID keycode (setting 25)
+  };
+  controller: {
+    up: number; // HID keycode (setting 26)
+    down: number; // HID keycode (setting 27)
+    left: number; // HID keycode (setting 28)
+    right: number; // HID keycode (setting 29)
+    north: number; // HID keycode (setting 30)
+    east: number; // HID keycode (setting 31)
+    south: number; // HID keycode (setting 32)
+    west: number; // HID keycode (setting 33)
+    l: number; // HID keycode (setting 34)
+    r: number; // HID keycode (setting 35)
+    start: number; // HID keycode (setting 36)
+    select: number; // HID keycode (setting 37)
+    home: number; // HID keycode (setting 38)
+    share: number; // HID keycode (setting 39)
+    l3: number; // HID keycode (setting 40)
+    r3: number; // HID keycode (setting 41)
+  };
+}
+
 export interface DeviceConfig {
   pads: Record<PadName, PadThresholds>;
   doubleInputMode: boolean; // setting 9
   timing: TimingConfig;
+  keyMappings?: KeyMappings;
   firmwareVersion?: string;
 }
 
@@ -132,5 +166,38 @@ export const SETTING_INDICES = {
     donLeft: 15,
     donRight: 16,
     kaRight: 17,
+  },
+  // Key mappings (18-41)
+  keyMapping: {
+    drumP1: {
+      kaLeft: 18,
+      donLeft: 19,
+      donRight: 20,
+      kaRight: 21,
+    },
+    drumP2: {
+      kaLeft: 22,
+      donLeft: 23,
+      donRight: 24,
+      kaRight: 25,
+    },
+    controller: {
+      up: 26,
+      down: 27,
+      left: 28,
+      right: 29,
+      north: 30,
+      east: 31,
+      south: 32,
+      west: 33,
+      l: 34,
+      r: 35,
+      start: 36,
+      select: 37,
+      home: 38,
+      share: 39,
+      l3: 40,
+      r3: 41,
+    },
   },
 } as const;

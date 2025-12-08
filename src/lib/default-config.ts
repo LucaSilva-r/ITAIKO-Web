@@ -1,5 +1,7 @@
 import type { DeviceConfig, MonitorSettings } from "@/types";
 
+// HID Keyboard keycodes (USB HID Usage Tables)
+// Common defaults for Taiko controllers
 export const DEFAULT_DEVICE_CONFIG: DeviceConfig = {
   pads: {
     kaLeft: { light: 800, heavy: 1200, cutoff: 4095 },
@@ -14,6 +16,38 @@ export const DEFAULT_DEVICE_CONFIG: DeviceConfig = {
     crosstalkDebounce: 30,
     individualDebounce: 19,
     keyHoldTime: 25,
+  },
+  keyMappings: {
+    drumP1: {
+      kaLeft: 0x08,   // E
+      donLeft: 0x07,  // D
+      donRight: 0x09, // F
+      kaRight: 0x0C,  // I
+    },
+    drumP2: {
+      kaLeft: 0x52,   // Up Arrow
+      donLeft: 0x50,  // Left Arrow
+      donRight: 0x4F,  // Right Arrow
+      kaRight: 0x51,  // Down Arrow
+    },
+    controller: {
+      up: 0x52,       // Up Arrow
+      down: 0x51,     // Down Arrow
+      left: 0x50,     // Left Arrow
+      right: 0x4F,    // Right Arrow
+      north: 0x1A,    // W
+      east: 0x07,     // D
+      south: 0x16,    // S
+      west: 0x04,     // A
+      l: 0x14,        // Q
+      r: 0x08,        // E
+      start: 0x28,    // Enter
+      select: 0x2C,   // Space
+      home: 0x29,     // Escape
+      share: 0x2B,    // Tab
+      l3: 0x15,       // R
+      r3: 0x09,       // F
+    },
   },
 };
 

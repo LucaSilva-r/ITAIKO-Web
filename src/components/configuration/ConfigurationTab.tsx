@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { PadConfigGroup } from "./PadConfigGroup";
 import { TimingSettings } from "./TimingSettings";
+import { KeyMappingSettings } from "./KeyMappingSettings";
 import { ConfigActions } from "./ConfigActions";
 import { PAD_NAMES } from "@/types";
 
@@ -62,6 +63,9 @@ export function ConfigurationTab() {
 
       {/* Timing Settings */}
       <TimingSettings />
+
+      {/* Key Mappings */}
+      <KeyMappingSettings />
     </div>
   );
 }

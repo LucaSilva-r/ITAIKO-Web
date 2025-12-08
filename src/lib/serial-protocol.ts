@@ -74,7 +74,7 @@ export function settingsToConfig(
     cutoff: settings.get(SETTING_INDICES.cutoffThreshold[pad]) ?? 4095,
   });
 
-  return {
+  const config: DeviceConfig = {
     pads: {
       kaLeft: getPadThresholds("kaLeft"),
       donLeft: getPadThresholds("donLeft"),
@@ -91,6 +91,44 @@ export function settingsToConfig(
     },
     firmwareVersion: version,
   };
+
+  // Add key mappings if present (firmware may not support them)
+  if (settings.has(SETTING_INDICES.keyMapping.drumP1.kaLeft)) {
+    config.keyMappings = {
+      drumP1: {
+        kaLeft: settings.get(SETTING_INDICES.keyMapping.drumP1.kaLeft) ?? 0,
+        donLeft: settings.get(SETTING_INDICES.keyMapping.drumP1.donLeft) ?? 0,
+        donRight: settings.get(SETTING_INDICES.keyMapping.drumP1.donRight) ?? 0,
+        kaRight: settings.get(SETTING_INDICES.keyMapping.drumP1.kaRight) ?? 0,
+      },
+      drumP2: {
+        kaLeft: settings.get(SETTING_INDICES.keyMapping.drumP2.kaLeft) ?? 0,
+        donLeft: settings.get(SETTING_INDICES.keyMapping.drumP2.donLeft) ?? 0,
+        donRight: settings.get(SETTING_INDICES.keyMapping.drumP2.donRight) ?? 0,
+        kaRight: settings.get(SETTING_INDICES.keyMapping.drumP2.kaRight) ?? 0,
+      },
+      controller: {
+        up: settings.get(SETTING_INDICES.keyMapping.controller.up) ?? 0,
+        down: settings.get(SETTING_INDICES.keyMapping.controller.down) ?? 0,
+        left: settings.get(SETTING_INDICES.keyMapping.controller.left) ?? 0,
+        right: settings.get(SETTING_INDICES.keyMapping.controller.right) ?? 0,
+        north: settings.get(SETTING_INDICES.keyMapping.controller.north) ?? 0,
+        east: settings.get(SETTING_INDICES.keyMapping.controller.east) ?? 0,
+        south: settings.get(SETTING_INDICES.keyMapping.controller.south) ?? 0,
+        west: settings.get(SETTING_INDICES.keyMapping.controller.west) ?? 0,
+        l: settings.get(SETTING_INDICES.keyMapping.controller.l) ?? 0,
+        r: settings.get(SETTING_INDICES.keyMapping.controller.r) ?? 0,
+        start: settings.get(SETTING_INDICES.keyMapping.controller.start) ?? 0,
+        select: settings.get(SETTING_INDICES.keyMapping.controller.select) ?? 0,
+        home: settings.get(SETTING_INDICES.keyMapping.controller.home) ?? 0,
+        share: settings.get(SETTING_INDICES.keyMapping.controller.share) ?? 0,
+        l3: settings.get(SETTING_INDICES.keyMapping.controller.l3) ?? 0,
+        r3: settings.get(SETTING_INDICES.keyMapping.controller.r3) ?? 0,
+      },
+    };
+  }
+
+  return config;
 }
 
 // Convert DeviceConfig to settings string for writing
@@ -125,6 +163,35 @@ export function configToSettingsString(config: DeviceConfig): string {
     const index = SETTING_INDICES.cutoffThreshold[pad];
     pairs.push(`${index}:${config.pads[pad].cutoff}`);
   });
+
+  // Key mappings (18-41) - only if present
+  if (config.keyMappings) {
+    const km = config.keyMappings;
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP1.kaLeft}:${km.drumP1.kaLeft}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP1.donLeft}:${km.drumP1.donLeft}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP1.donRight}:${km.drumP1.donRight}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP1.kaRight}:${km.drumP1.kaRight}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP2.kaLeft}:${km.drumP2.kaLeft}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP2.donLeft}:${km.drumP2.donLeft}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP2.donRight}:${km.drumP2.donRight}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.drumP2.kaRight}:${km.drumP2.kaRight}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.up}:${km.controller.up}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.down}:${km.controller.down}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.left}:${km.controller.left}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.right}:${km.controller.right}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.north}:${km.controller.north}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.east}:${km.controller.east}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.south}:${km.controller.south}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.west}:${km.controller.west}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.l}:${km.controller.l}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.r}:${km.controller.r}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.start}:${km.controller.start}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.select}:${km.controller.select}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.home}:${km.controller.home}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.share}:${km.controller.share}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.l3}:${km.controller.l3}`);
+    pairs.push(`${SETTING_INDICES.keyMapping.controller.r3}:${km.controller.r3}`);
+  }
 
   // Sort by index
   pairs.sort((a, b) => {
