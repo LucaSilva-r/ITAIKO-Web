@@ -13,7 +13,7 @@ export interface GithubRelease {
   }>;
 }
 
-export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'rebooting' | 'waiting_for_device' | 'flashing' | 'complete' | 'error' | 'manual_action_required';
+export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'rebooting' | 'waiting_for_device' | 'flashing' | 'writing' | 'complete' | 'error' | 'manual_action_required';
 
 export function useFirmwareUpdate(currentVersion?: string) {
   const [status, setStatus] = useState<UpdateStatus>('idle');
@@ -119,6 +119,8 @@ export function useFirmwareUpdate(currentVersion?: string) {
           }],
         });
 
+        // 5. Write to device
+        setStatus('writing');
         const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();

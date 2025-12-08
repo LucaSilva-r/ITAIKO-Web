@@ -2,7 +2,7 @@ import { useDevice } from "@/context/DeviceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Usb, AlertCircle, HardDriveDownload } from "lucide-react";
+import { Usb, AlertCircle, HardDriveDownload, Loader2 } from "lucide-react";
 
 export function ConnectionPanel() {
   const {
@@ -15,6 +15,7 @@ export function ConnectionPanel() {
     disconnect,
     config,
     rebootToBootsel,
+    hasAuthorizedDevice,
   } = useDevice();
 
   const handleConnect = async () => {
@@ -78,6 +79,13 @@ export function ConnectionPanel() {
                 </span>
               )}
             </div>
+            
+            {status === "disconnected" && hasAuthorizedDevice && (
+               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                 <Loader2 className="h-3 w-3 animate-spin" />
+                 <span>Waiting for device...</span>
+               </div>
+            )}
             
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>

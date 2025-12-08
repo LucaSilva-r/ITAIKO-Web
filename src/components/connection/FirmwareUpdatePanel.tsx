@@ -63,6 +63,13 @@ export function FirmwareUpdatePanel() {
                 <p className="text-sm text-amber-800">Please select the RPI-RP2 drive to save the firmware file.</p>
              )}
 
+             {firmwareUpdate.status === 'writing' && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-bold text-amber-800 animate-pulse">Copying firmware to device...</p>
+                  <p className="text-xs text-amber-800">Do not unplug the device.</p>
+                </div>
+             )}
+
              {firmwareUpdate.status === 'manual_action_required' && (
                 <div className="flex flex-col gap-2 p-3 bg-amber-100 rounded text-amber-900">
                   <p className="text-sm font-bold">Automatic download failed.</p>

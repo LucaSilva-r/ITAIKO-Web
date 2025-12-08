@@ -21,6 +21,7 @@ interface DeviceContextValue {
   isSupported: boolean;
   isConnected: boolean;
   isReady: boolean;  // True after initial config read completes
+  hasAuthorizedDevice: boolean;
   requestPort: () => Promise<SerialPort | null>;
   connect: () => Promise<boolean>;
   disconnect: () => Promise<void>;
@@ -120,6 +121,35 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
   
   const handleInstallUpdate = async () => {
     await firmwareUpdate.installUpdate(rebootToBootsel);
+    
+    // Auto-reconnect logic
+    console.log("Update process finished. Waiting for device reboot...");
+    
+    // Poll for the device for up to 20 seconds
+    const pollInterval = 1000;
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    const pollForDevice = async () => {
+      attempts++;
+      console.log(`Searching for device (Attempt ${attempts}/${maxAttempts})...`);
+      
+      const port = await serial.findAuthorizedPort();
+      if (port) {
+        console.log("Device found! Connecting...");
+        await serial.connect();
+        return;
+      }
+
+      if (attempts < maxAttempts) {
+        setTimeout(pollForDevice, pollInterval);
+      } else {
+        console.log("Device not found after reboot.");
+      }
+    };
+
+    // Start polling after a short delay to allow reboot to start
+    setTimeout(pollForDevice, 2000);
   };
 
   const value = useMemo<DeviceContextValue>(
@@ -130,6 +160,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       isSupported: serial.isSupported,
       isConnected,
       isReady,
+      hasAuthorizedDevice: serial.hasAuthorizedDevice,
       requestPort: serial.requestPort,
       connect: serial.connect,
       disconnect: serial.disconnect,
