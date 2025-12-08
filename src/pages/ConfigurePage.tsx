@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceProvider } from "@/context/DeviceContext";
 import { ConnectionPanel } from "@/components/connection/ConnectionPanel";
+import { FirmwareUpdatePanel } from "@/components/connection/FirmwareUpdatePanel";
 import { ConfigurationTab } from "@/components/configuration/ConfigurationTab";
 import { LiveMonitorTab } from "@/components/monitor/LiveMonitorTab";
 import { VisualDrumTab } from "@/components/visual/VisualDrumTab";
@@ -39,8 +40,9 @@ function ConfigurePageContent() {
       {/* Main Content */}
       <main className="px-4 w-full max-w-5xl py-6">
         {/* Connection Panel */}
-        <div className="mb-6">
+        <div className="mb-6 space-y-4">
           <ConnectionPanel />
+          <FirmwareUpdatePanel />
         </div>
 
         {/* Main Tabs */}
