@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceProvider } from "@/context/DeviceContext";
 import { ConnectionPanel } from "@/components/connection/ConnectionPanel";
 import { FirmwareUpdatePanel } from "@/components/connection/FirmwareUpdatePanel";
+import { FirmwareUpdateModal } from "@/components/connection/FirmwareUpdateModal";
 import { ConfigurationTab } from "@/components/configuration/ConfigurationTab";
 import { LiveMonitorTab } from "@/components/monitor/LiveMonitorTab";
 import { VisualDrumTab } from "@/components/visual/VisualDrumTab";
@@ -23,6 +24,7 @@ function ConfigurePageContent() {
   
   return (
     <div className="min-h-screen flex flex-col w-full items-center">
+      <FirmwareUpdateModal />
       {/* Header */}
       <header className="border-b w-full">
         <div className="flex h-14 items-center justify-between p-4">

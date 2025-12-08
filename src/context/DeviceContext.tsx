@@ -57,6 +57,8 @@ interface DeviceContextValue {
     progress: number;
     checkUpdate: () => Promise<void>;
     installUpdate: () => Promise<void>;
+    modalOpen: boolean;
+    setModalOpen: (open: boolean) => void;
   };
 }
 
@@ -69,6 +71,7 @@ interface DeviceProviderProps {
 export function DeviceProvider({ children }: DeviceProviderProps) {
   const serial = useWebSerial();
   const [isReady, setIsReady] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const isConnected = serial.status === "connected";
 
@@ -196,9 +199,11 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
         progress: firmwareUpdate.progress,
         checkUpdate: firmwareUpdate.checkUpdate,
         installUpdate: handleInstallUpdate,
+        modalOpen,
+        setModalOpen,
       },
     }),
-    [serial, deviceConfig, streaming, isConnected, isReady, firmwareUpdate]
+    [serial, deviceConfig, streaming, isConnected, isReady, firmwareUpdate, modalOpen]
   );
 
   return (
