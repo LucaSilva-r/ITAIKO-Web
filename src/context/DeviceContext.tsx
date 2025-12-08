@@ -3,7 +3,7 @@ import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
 import { useDeviceStreaming, type TriggerState } from "@/hooks/useDeviceStreaming";
-import { useFirmwareUpdate, type GithubRelease } from "@/hooks/useFirmwareUpdate";
+import { useFirmwareUpdate, type GithubRelease, type UpdateStatus } from "@/hooks/useFirmwareUpdate";
 import {
   DeviceCommand,
   type ConnectionStatus,
@@ -50,11 +50,12 @@ interface DeviceContextValue {
 
   // Firmware Update
   firmwareUpdate: {
-    isUpdateAvailable: boolean;
+    status: UpdateStatus;
     latestRelease: GithubRelease | null;
-    isChecking: boolean;
     error: string | null;
+    progress: number;
     checkUpdate: () => Promise<void>;
+    installUpdate: () => Promise<void>;
   };
 }
 
@@ -116,6 +117,10 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       }
     }
   };
+  
+  const handleInstallUpdate = async () => {
+    await firmwareUpdate.installUpdate(rebootToBootsel);
+  };
 
   const value = useMemo<DeviceContextValue>(
     () => ({
@@ -154,11 +159,12 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
 
       // Firmware Update
       firmwareUpdate: {
-        isUpdateAvailable: firmwareUpdate.isUpdateAvailable,
+        status: firmwareUpdate.status,
         latestRelease: firmwareUpdate.latestRelease,
-        isChecking: firmwareUpdate.isChecking,
         error: firmwareUpdate.error,
+        progress: firmwareUpdate.progress,
         checkUpdate: firmwareUpdate.checkUpdate,
+        installUpdate: handleInstallUpdate,
       },
     }),
     [serial, deviceConfig, streaming, isConnected, isReady, firmwareUpdate]
