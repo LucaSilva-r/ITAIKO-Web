@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { DeviceConfig, PadName, PadThresholds, TimingConfig, DeviceCommand, KeyMappings } from "@/types";
+import type { DeviceConfig, PadName, PadThresholds, TimingConfig, DeviceCommand, KeyMappings, ADCChannels } from "@/types";
 import { DeviceCommand as DeviceCommandValues } from "@/types";
 import {
   parseSettingsResponse,
@@ -37,6 +37,10 @@ interface UseDeviceConfigReturn {
     category: keyof KeyMappings,
     key: string,
     value: number
+  ) => void;
+  updateADCChannel: (
+    pad: keyof ADCChannels,
+    channel: number
   ) => void;
 }
 
@@ -173,6 +177,23 @@ export function useDeviceConfig({
     []
   );
 
+  const updateADCChannel = useCallback(
+    (pad: keyof ADCChannels, channel: number): void => {
+      setConfig((prev) => {
+        if (!prev.adcChannels) return prev;
+
+        return {
+          ...prev,
+          adcChannels: {
+            ...prev.adcChannels,
+            [pad]: channel,
+          },
+        };
+      });
+    },
+    []
+  );
+
   return {
     config,
     isLoading,
@@ -185,5 +206,6 @@ export function useDeviceConfig({
     updateTiming,
     setDoubleInputMode,
     updateKeyMapping,
+    updateADCChannel,
   };
 }

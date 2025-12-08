@@ -13,6 +13,7 @@ import {
   type TimingConfig,
   type PadBuffers,
   type KeyMappings,
+  type ADCChannels,
 } from "@/types";
 
 interface DeviceContextValue {
@@ -39,6 +40,7 @@ interface DeviceContextValue {
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
   updateKeyMapping: (category: keyof KeyMappings, key: string, value: number) => void;
+  updateADCChannel: (pad: keyof ADCChannels, channel: number) => void;
   rebootToBootsel: () => Promise<void>;
 
   // Streaming
@@ -182,6 +184,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       updateTiming: deviceConfig.updateTiming,
       setDoubleInputMode: deviceConfig.setDoubleInputMode,
       updateKeyMapping: deviceConfig.updateKeyMapping,
+      updateADCChannel: deviceConfig.updateADCChannel,
       rebootToBootsel,
 
       // Streaming

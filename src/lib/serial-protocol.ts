@@ -128,6 +128,16 @@ export function settingsToConfig(
     };
   }
 
+  // Add ADC channels if present (firmware may not support them)
+  if (settings.has(SETTING_INDICES.adcChannel.donLeft)) {
+    config.adcChannels = {
+      donLeft: settings.get(SETTING_INDICES.adcChannel.donLeft) ?? 0,
+      kaLeft: settings.get(SETTING_INDICES.adcChannel.kaLeft) ?? 1,
+      donRight: settings.get(SETTING_INDICES.adcChannel.donRight) ?? 2,
+      kaRight: settings.get(SETTING_INDICES.adcChannel.kaRight) ?? 3,
+    };
+  }
+
   return config;
 }
 
@@ -191,6 +201,15 @@ export function configToSettingsString(config: DeviceConfig): string {
     pairs.push(`${SETTING_INDICES.keyMapping.controller.share}:${km.controller.share}`);
     pairs.push(`${SETTING_INDICES.keyMapping.controller.l3}:${km.controller.l3}`);
     pairs.push(`${SETTING_INDICES.keyMapping.controller.r3}:${km.controller.r3}`);
+  }
+
+  // ADC channels (42-45) - only if present
+  if (config.adcChannels) {
+    const adc = config.adcChannels;
+    pairs.push(`${SETTING_INDICES.adcChannel.donLeft}:${adc.donLeft}`);
+    pairs.push(`${SETTING_INDICES.adcChannel.kaLeft}:${adc.kaLeft}`);
+    pairs.push(`${SETTING_INDICES.adcChannel.donRight}:${adc.donRight}`);
+    pairs.push(`${SETTING_INDICES.adcChannel.kaRight}:${adc.kaRight}`);
   }
 
   // Sort by index

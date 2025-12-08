@@ -49,6 +49,12 @@ export const DEFAULT_DEVICE_CONFIG: DeviceConfig = {
       r3: 0x09,       // F
     },
   },
+  adcChannels: {
+    donLeft: 0,   // ADC channel 0
+    kaLeft: 1,    // ADC channel 1
+    donRight: 2,  // ADC channel 2
+    kaRight: 3,   // ADC channel 3
+  },
 };
 
 export const DEFAULT_MONITOR_SETTINGS: MonitorSettings = {

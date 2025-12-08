@@ -121,11 +121,19 @@ export interface KeyMappings {
   };
 }
 
+export interface ADCChannels {
+  donLeft: number; // ADC channel 0-3 (or 0-7 for MCP3204) (setting 42)
+  kaLeft: number; // ADC channel 0-3 (or 0-7 for MCP3204) (setting 43)
+  donRight: number; // ADC channel 0-3 (or 0-7 for MCP3204) (setting 44)
+  kaRight: number; // ADC channel 0-3 (or 0-7 for MCP3204) (setting 45)
+}
+
 export interface DeviceConfig {
   pads: Record<PadName, PadThresholds>;
   doubleInputMode: boolean; // setting 9
   timing: TimingConfig;
   keyMappings?: KeyMappings;
+  adcChannels?: ADCChannels;
   firmwareVersion?: string;
 }
 
@@ -199,5 +207,12 @@ export const SETTING_INDICES = {
       l3: 40,
       r3: 41,
     },
+  },
+  // ADC channels (42-45)
+  adcChannel: {
+    donLeft: 42,
+    kaLeft: 43,
+    donRight: 44,
+    kaRight: 45,
   },
 } as const;
