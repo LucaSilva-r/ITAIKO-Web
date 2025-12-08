@@ -15,6 +15,7 @@ export function ConnectionPanel() {
     disconnect,
     config,
     rebootToBootsel,
+    firmwareUpdate,
   } = useDevice();
 
   const handleConnect = async () => {
@@ -50,34 +51,51 @@ export function ConnectionPanel() {
         <Usb className="h-5 w-5 text-muted-foreground" />
 
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">Device Connection</span>
-            <Badge
-              variant={
-                status === "connected"
-                  ? "default"
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Device Connection</span>
+              <Badge
+                variant={
+                  status === "connected"
+                    ? "default"
+                    : status === "connecting"
+                      ? "secondary"
+                      : status === "error"
+                        ? "destructive"
+                        : "outline"
+                }
+              >
+                {status === "connected"
+                  ? "Connected"
                   : status === "connecting"
-                    ? "secondary"
+                    ? "Connecting..."
                     : status === "error"
-                      ? "destructive"
-                      : "outline"
-              }
-            >
-              {status === "connected"
-                ? "Connected"
-                : status === "connecting"
-                  ? "Connecting..."
-                  : status === "error"
-                    ? "Error"
-                    : "Disconnected"}
-            </Badge>
-            {isConnected && config.firmwareVersion && (
-              <span className="text-xs text-muted-foreground font-mono border rounded px-1.5 py-0.5 bg-muted/50">
-                v{config.firmwareVersion}
-              </span>
+                      ? "Error"
+                      : "Disconnected"}
+              </Badge>
+              {isConnected && config.firmwareVersion && (
+                <span className="text-xs text-muted-foreground font-mono border rounded px-1.5 py-0.5 bg-muted/50">
+                  v{config.firmwareVersion}
+                </span>
+              )}
+            </div>
+            
+            {isConnected && firmwareUpdate.isUpdateAvailable && firmwareUpdate.latestRelease && (
+              <div className="flex items-center gap-2 text-sm text-amber-500 animate-in fade-in slide-in-from-top-1">
+                <AlertCircle className="h-4 w-4" />
+                <span>New firmware available: {firmwareUpdate.latestRelease.tag_name}</span>
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-amber-500 underline decoration-amber-500/30 hover:decoration-amber-500"
+                  onClick={() => window.open(firmwareUpdate.latestRelease?.html_url, '_blank')}
+                >
+                  Download
+                </Button>
+              </div>
             )}
+            
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
-          {error && <p className="text-sm text-destructive mt-1">{error}</p>}
         </div>
 
         {isConnected && (

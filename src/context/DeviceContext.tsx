@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
 import { useDeviceStreaming, type TriggerState } from "@/hooks/useDeviceStreaming";
+import { useFirmwareUpdate, type GithubRelease } from "@/hooks/useFirmwareUpdate";
 import {
   DeviceCommand,
   type ConnectionStatus,
@@ -46,6 +47,15 @@ interface DeviceContextValue {
   clearData: () => void;
   maxBufferSize: number;
   setMaxBufferSize: (size: number) => void;
+
+  // Firmware Update
+  firmwareUpdate: {
+    isUpdateAvailable: boolean;
+    latestRelease: GithubRelease | null;
+    isChecking: boolean;
+    error: string | null;
+    checkUpdate: () => Promise<void>;
+  };
 }
 
 const DeviceContext = createContext<DeviceContextValue | null>(null);
@@ -72,6 +82,8 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
     stopReading: serial.stopReading,
     isConnected,
   });
+
+  const firmwareUpdate = useFirmwareUpdate(deviceConfig.config.firmwareVersion);
 
   // Track previous connection state to detect new connections
   const wasConnectedRef = useRef(false);
@@ -139,8 +151,17 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       clearData: streaming.clearData,
       maxBufferSize: streaming.maxBufferSize,
       setMaxBufferSize: streaming.setMaxBufferSize,
+
+      // Firmware Update
+      firmwareUpdate: {
+        isUpdateAvailable: firmwareUpdate.isUpdateAvailable,
+        latestRelease: firmwareUpdate.latestRelease,
+        isChecking: firmwareUpdate.isChecking,
+        error: firmwareUpdate.error,
+        checkUpdate: firmwareUpdate.checkUpdate,
+      },
     }),
-    [serial, deviceConfig, streaming, isConnected, isReady]
+    [serial, deviceConfig, streaming, isConnected, isReady, firmwareUpdate]
   );
 
   return (
