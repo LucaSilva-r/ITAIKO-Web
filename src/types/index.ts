@@ -15,6 +15,7 @@ export const DeviceCommand = {
   READ_SETTINGS: 1000,
   SAVE_TO_FLASH: 1001,
   WRITE_MODE: 1002,
+  REBOOT_TO_BOOTSEL: 1004,
   START_STREAMING: 2000,
   STOP_STREAMING: 2001,
 } as const;
@@ -91,6 +92,7 @@ export interface DeviceConfig {
   pads: Record<PadName, PadThresholds>;
   doubleInputMode: boolean; // setting 9
   timing: TimingConfig;
+  firmwareVersion?: string;
 }
 
 // Monitor Settings (local UI state)

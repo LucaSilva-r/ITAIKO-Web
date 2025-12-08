@@ -40,8 +40,13 @@ export function parseStreamLine(line: string): StreamFrame | null {
 
 // Parse settings response from device
 // Format: key:value lines (0:800, 1:800, etc.)
-export function parseSettingsResponse(response: string): Map<number, number> {
+// Also extracts version if present (Version:x.x.x)
+export function parseSettingsResponse(response: string): {
+  settings: Map<number, number>;
+  version?: string;
+} {
   const settings = new Map<number, number>();
+  let version: string | undefined;
   const lines = response.trim().split("\n");
 
   for (const line of lines) {
@@ -50,14 +55,19 @@ export function parseSettingsResponse(response: string): Map<number, number> {
       const key = parseInt(match[1], 10);
       const value = parseInt(match[2], 10);
       settings.set(key, value);
+    } else if (line.startsWith("Version:")) {
+      version = line.substring(8).trim();
     }
   }
 
-  return settings;
+  return { settings, version };
 }
 
 // Convert settings map to DeviceConfig
-export function settingsToConfig(settings: Map<number, number>): DeviceConfig {
+export function settingsToConfig(
+  settings: Map<number, number>,
+  version?: string
+): DeviceConfig {
   const getPadThresholds = (pad: PadName) => ({
     light: settings.get(SETTING_INDICES.lightThreshold[pad]) ?? 800,
     heavy: settings.get(SETTING_INDICES.heavyThreshold[pad]) ?? 1200,
@@ -79,6 +89,7 @@ export function settingsToConfig(settings: Map<number, number>): DeviceConfig {
       individualDebounce: settings.get(SETTING_INDICES.individualDebounce) ?? 19,
       keyHoldTime: settings.get(SETTING_INDICES.keyHoldTime) ?? 25,
     },
+    firmwareVersion: version,
   };
 }
 

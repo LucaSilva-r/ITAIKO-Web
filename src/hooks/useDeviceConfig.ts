@@ -53,10 +53,10 @@ export function useDeviceConfig({
     try {
       await sendCommand(DeviceCommandValues.READ_SETTINGS);
       const response = await readUntilTimeout(1000);
-      const settings = parseSettingsResponse(response);
+      const { settings, version } = parseSettingsResponse(response);
 
       if (settings.size > 0) {
-        const newConfig = settingsToConfig(settings);
+        const newConfig = settingsToConfig(settings, version);
         setConfig(newConfig);
         setSavedConfig(newConfig);
         return true;

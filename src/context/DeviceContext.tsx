@@ -3,13 +3,14 @@ import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
 import { useDeviceStreaming, type TriggerState } from "@/hooks/useDeviceStreaming";
-import type {
-  ConnectionStatus,
-  DeviceConfig,
-  PadName,
-  PadThresholds,
-  TimingConfig,
-  PadBuffers,
+import {
+  DeviceCommand,
+  type ConnectionStatus,
+  type DeviceConfig,
+  type PadName,
+  type PadThresholds,
+  type TimingConfig,
+  type PadBuffers,
 } from "@/types";
 
 interface DeviceContextValue {
@@ -34,6 +35,7 @@ interface DeviceContextValue {
   updatePadThreshold: (pad: PadName, field: keyof PadThresholds, value: number) => void;
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
+  rebootToBootsel: () => Promise<void>;
 
   // Streaming
   isStreaming: boolean;
@@ -89,6 +91,20 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
     wasConnectedRef.current = isConnected;
   }, [isConnected, deviceConfig.readFromDevice]);
 
+  const rebootToBootsel = async () => {
+    if (isConnected) {
+      try {
+        await serial.sendCommand(DeviceCommand.REBOOT_TO_BOOTSEL);
+        // Give the command a moment to be sent
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Force disconnect since the device is rebooting and will disappear
+        await serial.disconnect();
+      } catch (err) {
+        console.error("Failed to reboot device:", err);
+      }
+    }
+  };
+
   const value = useMemo<DeviceContextValue>(
     () => ({
       // Connection
@@ -112,6 +128,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       updatePadThreshold: deviceConfig.updatePadThreshold,
       updateTiming: deviceConfig.updateTiming,
       setDoubleInputMode: deviceConfig.setDoubleInputMode,
+      rebootToBootsel,
 
       // Streaming
       isStreaming: streaming.isStreaming,

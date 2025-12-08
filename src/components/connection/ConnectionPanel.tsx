@@ -2,7 +2,7 @@ import { useDevice } from "@/context/DeviceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Usb, AlertCircle } from "lucide-react";
+import { Usb, AlertCircle, HardDriveDownload } from "lucide-react";
 
 export function ConnectionPanel() {
   const {
@@ -13,6 +13,8 @@ export function ConnectionPanel() {
     requestPort,
     connect,
     disconnect,
+    config,
+    rebootToBootsel,
   } = useDevice();
 
   const handleConnect = async () => {
@@ -69,9 +71,25 @@ export function ConnectionPanel() {
                     ? "Error"
                     : "Disconnected"}
             </Badge>
+            {isConnected && config.firmwareVersion && (
+              <span className="text-xs text-muted-foreground font-mono border rounded px-1.5 py-0.5 bg-muted/50">
+                v{config.firmwareVersion}
+              </span>
+            )}
           </div>
           {error && <p className="text-sm text-destructive mt-1">{error}</p>}
         </div>
+
+        {isConnected && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={rebootToBootsel}
+            title="Reboot to Bootloader"
+          >
+            <HardDriveDownload className="h-4 w-4" />
+          </Button>
+        )}
 
         <Button
           onClick={handleConnect}
