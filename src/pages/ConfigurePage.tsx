@@ -1,5 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom"; // 1. Import hook
-import { Button } from "@/components/ui/button";
+import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceProvider } from "@/context/DeviceContext";
 import { ConnectionPanel } from "@/components/connection/ConnectionPanel";
@@ -8,6 +7,10 @@ import { FirmwareUpdateModal } from "@/components/connection/FirmwareUpdateModal
 import { ConfigurationTab } from "@/components/configuration/ConfigurationTab";
 import { LiveMonitorTab } from "@/components/monitor/LiveMonitorTab";
 import { VisualDrumTab } from "@/components/visual/VisualDrumTab";
+import { initializeHelpContent } from "@/lib/help-content";
+
+// Initialize help content
+initializeHelpContent();
 
 function ConfigurePageContent() {
   // 2. Initialize the search params hook

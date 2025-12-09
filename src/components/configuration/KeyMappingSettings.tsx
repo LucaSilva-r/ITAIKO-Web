@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import type { KeyMappings } from "@/types";
 import { hidToKeyName, browserKeyToHid } from "@/lib/hid-keycodes";
+import { HelpButton } from "@/components/ui/help-modal";
 
 interface KeyMappingInputProps {
   label: string;
@@ -94,7 +95,10 @@ export function KeyMappingSettings() {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-medium">Key Mappings</h3>
+      <h3 className="font-medium flex items-center gap-2">
+        Key Mappings
+        <HelpButton helpKey="key-mappings" />
+      </h3>
       <p className="text-sm text-muted-foreground -mt-2">
         Click any button and press a key to assign it. Click outside to cancel.
       </p>

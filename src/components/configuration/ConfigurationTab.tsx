@@ -9,6 +9,7 @@ import { ADCChannelSettings } from "./ADCChannelSettings";
 import { KeyMappingSettings } from "./KeyMappingSettings";
 import { ConfigActions } from "./ConfigActions";
 import { PAD_NAMES } from "@/types";
+import { HelpButton } from "@/components/ui/help-modal";
 
 export function ConfigurationTab() {
   const { config, setDoubleInputMode, isConnected, stopStreaming } = useDevice();
@@ -32,7 +33,10 @@ export function ConfigurationTab() {
       {/* Global Settings */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Global Settings</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            Global Settings
+            <HelpButton helpKey="global-settings" />
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
@@ -54,7 +58,10 @@ export function ConfigurationTab() {
 
       {/* Pad Configuration Grid */}
       <div>
-        <h3 className="font-medium mb-3">Pad Thresholds</h3>
+        <h3 className="font-medium mb-3 flex items-center gap-2">
+          Pad Thresholds
+          <HelpButton helpKey="pad-thresholds" />
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {PAD_NAMES.map((pad) => (
             <PadConfigGroup key={pad} pad={pad} />

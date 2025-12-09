@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ADCChannels } from "@/types";
+import { HelpButton } from "@/components/ui/help-modal";
 
 interface ADCChannelSelectProps {
   label: string;
@@ -63,7 +64,10 @@ export function ADCChannelSettings() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">ADC Channel Mapping</CardTitle>
+        <CardTitle className="text-base flex items-center gap-2">
+          ADC Channel Mapping
+          <HelpButton helpKey="adc-channels" />
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">
