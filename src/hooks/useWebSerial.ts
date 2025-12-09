@@ -45,16 +45,23 @@ export function useWebSerial(): UseWebSerialReturn {
   // Track if we're in the middle of a user-initiated disconnect
   const disconnectingRef = useRef(false);
 
+  // Ref to track if component is mounted (for cleanup)
+  const isMountedRef = useRef(true);
+
   // Check for authorized ports on mount and set up event listeners
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (!isSupported) return;
 
     const checkAuthorizedPorts = async () => {
+      if (!isMountedRef.current) return;
+
       try {
         const ports = await navigator.serial.getPorts();
         const authorized = ports.some(p => p.getInfo().usbVendorId === PICO_VENDOR_ID);
         setHasAuthorizedDevice(authorized);
-        
+
         // Auto-connect if we found a port and aren't connected
         if (authorized && !port.current && status === 'disconnected') {
            const p = ports.find(p => p.getInfo().usbVendorId === PICO_VENDOR_ID);
@@ -83,10 +90,48 @@ export function useWebSerial(): UseWebSerialReturn {
     navigator.serial.addEventListener('disconnect', handleDisconnect);
 
     return () => {
+      isMountedRef.current = false;
       navigator.serial.removeEventListener('connect', handleConnect);
       navigator.serial.removeEventListener('disconnect', handleDisconnect);
     };
   }, [isSupported]); // We intentionally leave 'connect' and 'status' out to avoid loops, as checkAuthorizedPorts handles the logic safely
+
+  // Cleanup: disconnect when the hook unmounts
+  useEffect(() => {
+    return () => {
+      // Disconnect serial port on unmount to prevent orphaned connections
+      if (port.current) {
+        disconnectingRef.current = true;
+        loopRunningRef.current = false;
+        onDataCallbackRef.current = null;
+
+        const cleanup = async () => {
+          try {
+            if (readerRef.current) {
+              await readerRef.current.cancel();
+              readerRef.current.releaseLock();
+              readerRef.current = null;
+            }
+            if (inputDoneRef.current) {
+              await inputDoneRef.current.catch(() => {});
+              inputDoneRef.current = null;
+            }
+            if (writerRef.current) {
+              await writerRef.current.close().catch(() => {});
+              writerRef.current.releaseLock();
+              writerRef.current = null;
+            }
+            if (port.current) {
+              await port.current.close();
+            }
+          } catch (err) {
+            console.error("Cleanup disconnect error:", err);
+          }
+        };
+        cleanup();
+      }
+    };
+  }, []);
 
   const startReadLoop = useCallback(() => {
     if (loopRunningRef.current || !readerRef.current) return;
