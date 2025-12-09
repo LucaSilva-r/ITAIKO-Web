@@ -5,6 +5,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import type { TimingConfig } from "@/types";
 import { TIMING_MIN, TIMING_MAX } from "@/lib/default-config";
+import { HelpButton } from "@/components/ui/help-modal";
 
 interface TimingSettingProps {
   label: string;
@@ -69,7 +70,10 @@ export function TimingSettings() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Timing Settings</CardTitle>
+        <CardTitle className="text-base flex items-center gap-2">
+          Timing Settings
+          <HelpButton helpKey="timing-settings" />
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <TimingSetting

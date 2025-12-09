@@ -84,7 +84,7 @@ export function LandingPage() {
             <Usb className="h-4 w-4" />
             <span>Requires Chrome, Edge, or Opera (WebSerial API)</span>
           </div>
-          <div>ITAIKO Drum Controller</div>
+          <div>ITAIKO</div>
         </div>
       </footer>
     </div>

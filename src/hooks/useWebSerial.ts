@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, type RefObject } from "react";
+import { useState, useCallback, useRef, type RefObject, useEffect } from "react";
 import type { ConnectionStatus, DeviceCommand } from "@/types";
 import { PICO_VENDOR_ID, BAUD_RATE } from "@/types";
 import { encodeCommand } from "@/lib/serial-protocol";
@@ -8,7 +8,9 @@ interface UseWebSerialReturn {
   error: string | null;
   isSupported: boolean;
   port: RefObject<SerialPort | null>;
+  hasAuthorizedDevice: boolean;
   requestPort: () => Promise<SerialPort | null>;
+  findAuthorizedPort: () => Promise<SerialPort | null>;
   connect: () => Promise<boolean>;
   disconnect: () => Promise<void>;
   sendCommand: (command: DeviceCommand, data?: string) => Promise<void>;
@@ -24,6 +26,7 @@ export function useWebSerial(): UseWebSerialReturn {
   const [error, setError] = useState<string | null>(null);
   const port = useRef<SerialPort | null>(null);
   const [isReading, setIsReading] = useState(false);
+  const [hasAuthorizedDevice, setHasAuthorizedDevice] = useState(false);
 
   // We use a ReadableStream reader that returns strings directly
   const readerRef = useRef<ReadableStreamDefaultReader<string> | null>(null);
@@ -41,6 +44,94 @@ export function useWebSerial(): UseWebSerialReturn {
 
   // Track if we're in the middle of a user-initiated disconnect
   const disconnectingRef = useRef(false);
+
+  // Ref to track if component is mounted (for cleanup)
+  const isMountedRef = useRef(true);
+
+  // Check for authorized ports on mount and set up event listeners
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    if (!isSupported) return;
+
+    const checkAuthorizedPorts = async () => {
+      if (!isMountedRef.current) return;
+
+      try {
+        const ports = await navigator.serial.getPorts();
+        const authorized = ports.some(p => p.getInfo().usbVendorId === PICO_VENDOR_ID);
+        setHasAuthorizedDevice(authorized);
+
+        // Auto-connect if we found a port and aren't connected
+        if (authorized && !port.current && status === 'disconnected') {
+           const p = ports.find(p => p.getInfo().usbVendorId === PICO_VENDOR_ID);
+           if (p) {
+             port.current = p;
+             connect();
+           }
+        }
+      } catch (e) {
+        console.error("Failed to check ports:", e);
+      }
+    };
+
+    checkAuthorizedPorts();
+
+    const handleConnect = () => {
+       // When a device is connected, check if it's ours and try to connect
+       checkAuthorizedPorts();
+    };
+
+    const handleDisconnect = () => {
+       checkAuthorizedPorts();
+    };
+
+    navigator.serial.addEventListener('connect', handleConnect);
+    navigator.serial.addEventListener('disconnect', handleDisconnect);
+
+    return () => {
+      isMountedRef.current = false;
+      navigator.serial.removeEventListener('connect', handleConnect);
+      navigator.serial.removeEventListener('disconnect', handleDisconnect);
+    };
+  }, [isSupported]); // We intentionally leave 'connect' and 'status' out to avoid loops, as checkAuthorizedPorts handles the logic safely
+
+  // Cleanup: disconnect when the hook unmounts
+  useEffect(() => {
+    return () => {
+      // Disconnect serial port on unmount to prevent orphaned connections
+      if (port.current) {
+        disconnectingRef.current = true;
+        loopRunningRef.current = false;
+        onDataCallbackRef.current = null;
+
+        const cleanup = async () => {
+          try {
+            if (readerRef.current) {
+              await readerRef.current.cancel();
+              readerRef.current.releaseLock();
+              readerRef.current = null;
+            }
+            if (inputDoneRef.current) {
+              await inputDoneRef.current.catch(() => {});
+              inputDoneRef.current = null;
+            }
+            if (writerRef.current) {
+              await writerRef.current.close().catch(() => {});
+              writerRef.current.releaseLock();
+              writerRef.current = null;
+            }
+            if (port.current) {
+              await port.current.close();
+            }
+          } catch (err) {
+            console.error("Cleanup disconnect error:", err);
+          }
+        };
+        cleanup();
+      }
+    };
+  }, []);
 
   const startReadLoop = useCallback(() => {
     if (loopRunningRef.current || !readerRef.current) return;
@@ -66,6 +157,10 @@ export function useWebSerial(): UseWebSerialReturn {
               buffer = buffer.slice(newlineIndex + 1);
 
               if (line) {
+                if (new URLSearchParams(window.location.search).get("debug") === "true") {
+                  console.log(`[Serial RX] ${line}`);
+                }
+
                 if (onDataCallbackRef.current) {
                   onDataCallbackRef.current(line);
                 } else {
@@ -115,6 +210,25 @@ export function useWebSerial(): UseWebSerialReturn {
       return selectedPort;
     } catch (err) {
       if (err instanceof Error && err.name !== "NotFoundError") setError(err.message);
+      return null;
+    }
+  }, [isSupported]);
+  
+  const findAuthorizedPort = useCallback(async (): Promise<SerialPort | null> => {
+    if (!isSupported) return null;
+    try {
+      const ports = await navigator.serial.getPorts();
+      const authorized = ports.find(p => {
+        const info = p.getInfo();
+        return info.usbVendorId === PICO_VENDOR_ID;
+      });
+      if (authorized) {
+        port.current = authorized;
+        return authorized;
+      }
+      return null;
+    } catch (err) {
+      console.error("Error finding authorized ports", err);
       return null;
     }
   }, [isSupported]);
@@ -201,6 +315,9 @@ export function useWebSerial(): UseWebSerialReturn {
   const sendCommand = useCallback(async (command: DeviceCommand, data?: string): Promise<void> => {
       if (!writerRef.current) throw new Error("Not connected");
       const cmdStr = data ? `${command}\n${data}\n` : `${command}\n`;
+      if (new URLSearchParams(window.location.search).get("debug") === "true") {
+        console.log(`[Serial TX] ${cmdStr.trim()}`);
+      }
       await writerRef.current.write(encodeCommand(cmdStr));
     }, []);
 
@@ -233,5 +350,8 @@ export function useWebSerial(): UseWebSerialReturn {
     setIsReading(false);
   }, []);
 
-  return { status, error, isSupported, port, requestPort, connect, disconnect, sendCommand, readLine, readUntilTimeout, startReading, stopReading, isReading };
-}
+    return { status, error, isSupported, port, hasAuthorizedDevice, requestPort, findAuthorizedPort, connect, disconnect, sendCommand, readLine, readUntilTimeout, startReading, stopReading, isReading };
+
+  }
+
+  

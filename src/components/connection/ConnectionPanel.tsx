@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Usb, AlertCircle } from "lucide-react";
+import { Usb, AlertCircle, Skull } from "lucide-react";
+import { toast } from "sonner";
+import { EmergencyRecoveryModal } from "./EmergencyRecoveryModal";
 
 export function ConnectionPanel() {
   const {
@@ -13,7 +16,17 @@ export function ConnectionPanel() {
     requestPort,
     connect,
     disconnect,
+    config,
   } = useDevice();
+
+  const [recoveryModalOpen, setRecoveryModalOpen] = useState(false);
+
+  // Show error as toast instead of inline
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const handleConnect = async () => {
     if (isConnected) {
@@ -48,30 +61,46 @@ export function ConnectionPanel() {
         <Usb className="h-5 w-5 text-muted-foreground" />
 
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">Device Connection</span>
-            <Badge
-              variant={
-                status === "connected"
-                  ? "default"
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Device Connection</span>
+              <Badge
+                variant={
+                  status === "connected"
+                    ? "default"
+                    : status === "connecting"
+                      ? "secondary"
+                      : status === "error"
+                        ? "destructive"
+                        : "outline"
+                }
+              >
+                {status === "connected"
+                  ? "Connected"
                   : status === "connecting"
-                    ? "secondary"
+                    ? "Connecting..."
                     : status === "error"
-                      ? "destructive"
-                      : "outline"
-              }
-            >
-              {status === "connected"
-                ? "Connected"
-                : status === "connecting"
-                  ? "Connecting..."
-                  : status === "error"
-                    ? "Error"
-                    : "Disconnected"}
-            </Badge>
+                      ? "Error"
+                      : "Disconnected"}
+              </Badge>
+              {isConnected && config.firmwareVersion && (
+                <span className="text-xs text-muted-foreground font-mono border rounded px-1.5 py-0.5 bg-muted/50">
+                  v{config.firmwareVersion}
+                </span>
+              )}
+            </div>
           </div>
-          {error && <p className="text-sm text-destructive mt-1">{error}</p>}
         </div>
+
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={() => setRecoveryModalOpen(true)}
+          title="Emergency Recovery - Wipe and Reflash"
+          className="bg-red-600 hover:bg-red-700 border-red-800"
+        >
+          <Skull className="h-4 w-4" />
+        </Button>
 
         <Button
           onClick={handleConnect}
@@ -81,6 +110,11 @@ export function ConnectionPanel() {
           {isConnected ? "Disconnect" : "Connect"}
         </Button>
       </CardContent>
+
+      <EmergencyRecoveryModal
+        open={recoveryModalOpen}
+        onOpenChange={setRecoveryModalOpen}
+      />
     </Card>
   );
 }

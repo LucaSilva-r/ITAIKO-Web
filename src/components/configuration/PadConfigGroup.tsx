@@ -9,12 +9,13 @@ import { THRESHOLD_MIN, THRESHOLD_MAX } from "@/lib/default-config";
 
 interface PadConfigGroupProps {
   pad: PadName;
+  simpleMode?: boolean;
 }
 
-export function PadConfigGroup({ pad }: PadConfigGroupProps) {
+export function PadConfigGroup({ pad, simpleMode = false }: PadConfigGroupProps) {
   const { config, updatePadThreshold, isConnected } = useDevice();
   const thresholds = config.pads[pad];
-  const showHeavy = config.doubleInputMode;
+  const showHeavy = config.doubleInputMode && !simpleMode;
 
   const handleSliderChange = (
     field: "light" | "heavy" | "cutoff",
@@ -102,32 +103,34 @@ export function PadConfigGroup({ pad }: PadConfigGroupProps) {
           </div>
         )}
 
-        {/* Cutoff Threshold */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`${pad}-cutoff`} className="text-sm">
-              Cutoff
-            </Label>
-            <Input
-              id={`${pad}-cutoff`}
-              type="number"
-              value={thresholds.cutoff}
-              onChange={(e) => handleInputChange("cutoff", e)}
-              className="w-20 h-8 text-right"
+        {/* Cutoff Threshold - Advanced only */}
+        {!simpleMode && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`${pad}-cutoff`} className="text-sm">
+                Cutoff
+              </Label>
+              <Input
+                id={`${pad}-cutoff`}
+                type="number"
+                value={thresholds.cutoff}
+                onChange={(e) => handleInputChange("cutoff", e)}
+                className="w-20 h-8 text-right"
+                min={THRESHOLD_MIN}
+                max={THRESHOLD_MAX}
+                disabled={!isConnected}
+              />
+            </div>
+            <Slider
+              value={[thresholds.cutoff]}
+              onValueChange={(v) => handleSliderChange("cutoff", v)}
               min={THRESHOLD_MIN}
               max={THRESHOLD_MAX}
+              step={1}
               disabled={!isConnected}
             />
           </div>
-          <Slider
-            value={[thresholds.cutoff]}
-            onValueChange={(v) => handleSliderChange("cutoff", v)}
-            min={THRESHOLD_MIN}
-            max={THRESHOLD_MAX}
-            step={1}
-            disabled={!isConnected}
-          />
-        </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { DeviceConfig, PadName, PadThresholds, TimingConfig, DeviceCommand } from "@/types";
+import type { DeviceConfig, PadName, PadThresholds, TimingConfig, DeviceCommand, KeyMappings, ADCChannels } from "@/types";
 import { DeviceCommand as DeviceCommandValues } from "@/types";
 import {
   parseSettingsResponse,
@@ -33,6 +33,15 @@ interface UseDeviceConfigReturn {
   ) => void;
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
+  updateKeyMapping: (
+    category: keyof KeyMappings,
+    key: string,
+    value: number
+  ) => void;
+  updateADCChannel: (
+    pad: keyof ADCChannels,
+    channel: number
+  ) => void;
 }
 
 export function useDeviceConfig({
@@ -53,10 +62,10 @@ export function useDeviceConfig({
     try {
       await sendCommand(DeviceCommandValues.READ_SETTINGS);
       const response = await readUntilTimeout(1000);
-      const settings = parseSettingsResponse(response);
+      const { settings, version } = parseSettingsResponse(response);
 
       if (settings.size > 0) {
-        const newConfig = settingsToConfig(settings);
+        const newConfig = settingsToConfig(settings, version);
         setConfig(newConfig);
         setSavedConfig(newConfig);
         return true;
@@ -148,6 +157,43 @@ export function useDeviceConfig({
     }));
   }, []);
 
+  const updateKeyMapping = useCallback(
+    (category: keyof KeyMappings, key: string, value: number): void => {
+      setConfig((prev) => {
+        if (!prev.keyMappings) return prev;
+
+        return {
+          ...prev,
+          keyMappings: {
+            ...prev.keyMappings,
+            [category]: {
+              ...prev.keyMappings[category],
+              [key]: value,
+            },
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const updateADCChannel = useCallback(
+    (pad: keyof ADCChannels, channel: number): void => {
+      setConfig((prev) => {
+        if (!prev.adcChannels) return prev;
+
+        return {
+          ...prev,
+          adcChannels: {
+            ...prev.adcChannels,
+            [pad]: channel,
+          },
+        };
+      });
+    },
+    []
+  );
+
   return {
     config,
     isLoading,
@@ -159,5 +205,7 @@ export function useDeviceConfig({
     updatePadThreshold,
     updateTiming,
     setDoubleInputMode,
+    updateKeyMapping,
+    updateADCChannel,
   };
 }
