@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DeviceProvider } from "@/context/DeviceContext";
-import { ConnectionPanel } from "@/components/connection/ConnectionPanel";
+import { HeaderConnectionStatus } from "@/components/connection/HeaderConnectionStatus";
 import { FirmwareUpdatePanel } from "@/components/connection/FirmwareUpdatePanel";
 import { FirmwareUpdateModal } from "@/components/connection/FirmwareUpdateModal";
 import { ConfigurationTab } from "@/components/configuration/ConfigurationTab";
@@ -12,57 +12,50 @@ import { initializeHelpContent } from "@/lib/help-content";
 initializeHelpContent();
 
 function ConfigurePageContent() {
-  // 2. Initialize the search params hook
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // 3. Determine the current tab. 
-  // If 'tab' param exists, use it; otherwise default to "config"
   const currentTab = searchParams.get("tab") || "config";
 
-  // 4. Create a handler to update the URL when the tab changes
   const onTabChange = (value: string) => {
     setSearchParams({ tab: value });
   };
-  
+
   return (
     <div className="min-h-screen flex flex-col w-full items-center">
       <FirmwareUpdateModal />
-      {/* Header */}
+      {/* Header with connection status */}
       <header className="border-b w-full">
-        <div className="flex h-14 items-center justify-between p-4">
+        <div className="flex h-14 items-center justify-between px-4">
           <Link to="/" className="font-bold text-xl">
             <img src="itaiko.png" className="pixelated drag-none" alt="Logo" />
           </Link>
+          <HeaderConnectionStatus />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="px-4 w-full max-w-5xl py-6">
-        {/* Connection Panel */}
-        <div className="mb-6 space-y-4">
-          <ConnectionPanel />
-          <FirmwareUpdatePanel />
-        </div>
-
-        {/* Main Tabs */}
-        {/* 5. Switch from 'defaultValue' to controlled 'value' and 'onValueChange' */}
+      <main className="px-4 w-full max-w-5xl py-6 flex-1">
         <Tabs
           value={currentTab}
           onValueChange={onTabChange}
-          className="space-y-4"
+          className="flex flex-col h-full"
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="monitor">Live Monitor</TabsTrigger>
-            <TabsTrigger value="config">Configuration</TabsTrigger>
-          </TabsList>
+          {/* Tab Content */}
+          <TabsContent value="config" className="flex-1 mt-0">
+            <ConfigurationTab />
+          </TabsContent>
 
-          <TabsContent value="monitor" className="space-y-4">
+          <TabsContent value="monitor" className="flex-1 mt-0">
             <LiveMonitorTab />
           </TabsContent>
 
-          <TabsContent value="config" className="space-y-4">
-            <ConfigurationTab />
-          </TabsContent>
+          {/* Firmware Update Panel */}
+          <FirmwareUpdatePanel />
+
+          {/* Tabs at bottom */}
+          <TabsList className="grid w-full grid-cols-2 mt-6">
+            <TabsTrigger value="config">Configuration</TabsTrigger>
+            <TabsTrigger value="monitor">Live Monitor</TabsTrigger>
+          </TabsList>
         </Tabs>
       </main>
     </div>
