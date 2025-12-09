@@ -31,11 +31,6 @@ function ConfigurePageContent() {
           <Link to="/" className="font-bold text-xl">
             <img src="itaiko.png" className="pixelated drag-none" alt="Logo" />
           </Link>
-          <nav className="flex items-center gap-4">
-            <Button variant="ghost" asChild>
-              <Link to="/">Home</Link>
-            </Button>
-          </nav>
         </div>
       </header>
 

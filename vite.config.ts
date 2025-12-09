@@ -17,10 +17,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'ITAIKO',
+        name: 'ITAIKO Configurator',
         short_name: 'ITAIKO',
         description: 'ITAIKO Drum Configurator',
         theme_color: '#0a0a0a',
+        start_url: '/configure',
+        scope: '/configure',
         icons: [
           {
             src: 'pwa-64x64.png',
