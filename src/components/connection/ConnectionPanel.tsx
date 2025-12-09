@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Usb, AlertCircle, HardDriveDownload, Loader2 } from "lucide-react";
+import { Usb, AlertCircle, Skull } from "lucide-react";
+import { toast } from "sonner";
+import { EmergencyRecoveryModal } from "./EmergencyRecoveryModal";
 
 export function ConnectionPanel() {
   const {
@@ -14,9 +17,16 @@ export function ConnectionPanel() {
     connect,
     disconnect,
     config,
-    rebootToBootsel,
-    hasAuthorizedDevice,
   } = useDevice();
+
+  const [recoveryModalOpen, setRecoveryModalOpen] = useState(false);
+
+  // Show error as toast instead of inline
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const handleConnect = async () => {
     if (isConnected) {
@@ -79,28 +89,18 @@ export function ConnectionPanel() {
                 </span>
               )}
             </div>
-            
-            {status === "disconnected" && hasAuthorizedDevice && (
-               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                 <Loader2 className="h-3 w-3 animate-spin" />
-                 <span>Waiting for device...</span>
-               </div>
-            )}
-            
-            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
         </div>
 
-        {isConnected && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={rebootToBootsel}
-            title="Reboot to Bootloader"
-          >
-            <HardDriveDownload className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          variant="destructive"
+          size="icon"
+          onClick={() => setRecoveryModalOpen(true)}
+          title="Emergency Recovery - Wipe and Reflash"
+          className="bg-red-600 hover:bg-red-700 border-red-800"
+        >
+          <Skull className="h-4 w-4" />
+        </Button>
 
         <Button
           onClick={handleConnect}
@@ -110,6 +110,11 @@ export function ConnectionPanel() {
           {isConnected ? "Disconnect" : "Connect"}
         </Button>
       </CardContent>
+
+      <EmergencyRecoveryModal
+        open={recoveryModalOpen}
+        onOpenChange={setRecoveryModalOpen}
+      />
     </Card>
   );
 }

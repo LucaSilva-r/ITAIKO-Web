@@ -15,7 +15,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/configure" element={<ConfigurePage />} />
       </Routes>
-      <Toaster />
+      <Toaster position="top-center" />
     </ThemeProvider>
   );
 }
