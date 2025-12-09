@@ -6,7 +6,6 @@ import { FirmwareUpdatePanel } from "@/components/connection/FirmwareUpdatePanel
 import { FirmwareUpdateModal } from "@/components/connection/FirmwareUpdateModal";
 import { ConfigurationTab } from "@/components/configuration/ConfigurationTab";
 import { LiveMonitorTab } from "@/components/monitor/LiveMonitorTab";
-import { VisualDrumTab } from "@/components/visual/VisualDrumTab";
 import { initializeHelpContent } from "@/lib/help-content";
 
 // Initialize help content
@@ -47,15 +46,14 @@ function ConfigurePageContent() {
 
         {/* Main Tabs */}
         {/* 5. Switch from 'defaultValue' to controlled 'value' and 'onValueChange' */}
-        <Tabs 
-          value={currentTab} 
-          onValueChange={onTabChange} 
+        <Tabs
+          value={currentTab}
+          onValueChange={onTabChange}
           className="space-y-4"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="monitor">Live Monitor</TabsTrigger>
             <TabsTrigger value="config">Configuration</TabsTrigger>
-            <TabsTrigger value="visual">Visual Drum</TabsTrigger>
           </TabsList>
 
           <TabsContent value="monitor" className="space-y-4">
@@ -64,10 +62,6 @@ function ConfigurePageContent() {
 
           <TabsContent value="config" className="space-y-4">
             <ConfigurationTab />
-          </TabsContent>
-
-          <TabsContent value="visual" className="space-y-4">
-            <VisualDrumTab />
           </TabsContent>
         </Tabs>
       </main>

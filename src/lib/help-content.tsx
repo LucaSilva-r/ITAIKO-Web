@@ -1,5 +1,5 @@
 import { registerHelp } from "@/components/ui/help-modal";
-import { LucideAlertTriangle, LucideFileWarning } from "lucide-react";
+import { LucideAlertTriangle } from "lucide-react";
 
 // Register all help content on module load
 export function initializeHelpContent() {
