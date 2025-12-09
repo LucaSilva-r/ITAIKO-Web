@@ -96,15 +96,13 @@ export function useFirmwareUpdate(currentVersion?: string) {
       await rebootCallback();
       setProgress(50);
 
-      // 3. Find Device (WebUSB confirmation)
+      // 3. Wait for the device to reboot into bootloader mode
       setStatus('waiting_for_device');
-      
-      try {
-        await navigator.usb.requestDevice({ filters: [{ vendorId: 0x2E8A, productId: 0x0003 }] });
-      } catch (e) {
-        console.warn("Device selection cancelled or failed:", e);
-        // We continue even if they cancelled, assuming they might have the drive ready anyway.
-      }
+
+      // Wait for the device to fully reboot into bootloader mode
+      // The RP2040 bootloader appears as USB Mass Storage (RPI-RP2 drive), not WebUSB
+      // We wait a fixed time to ensure the device has completed the reboot
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       if (blob) {
         // 4a. Flash (Save File via File System Access API)

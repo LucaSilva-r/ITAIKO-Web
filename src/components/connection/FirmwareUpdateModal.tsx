@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import {
   Dialog,
@@ -11,14 +12,27 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 
 export function FirmwareUpdateModal() {
-  const { firmwareUpdate } = useDevice();
+  const { firmwareUpdate, isConnected } = useDevice();
   const { status, progress, error, latestRelease, modalOpen, setModalOpen, installUpdate } = firmwareUpdate;
+
+  // Track if we reached 'complete' status to auto-close on reconnect
+  const wasCompleteRef = useRef(false);
 
   // Prevent closing when in progress
   const isUpdating = status !== 'idle' && status !== 'available' && status !== 'checking' && status !== 'complete' && status !== 'error';
-  
-  // Close automatically on success after a delay? No, user might want to read confirmation.
-  // But we might want to auto-open if a critical update is pushed? No, keep it manual.
+
+  // Auto-close modal when device reconnects after successful update
+  useEffect(() => {
+    if (status === 'complete') {
+      wasCompleteRef.current = true;
+    }
+
+    // If we were complete and device reconnected (status changed to idle/checking), close modal
+    if (wasCompleteRef.current && isConnected && (status === 'idle' || status === 'checking')) {
+      wasCompleteRef.current = false;
+      setModalOpen(false);
+    }
+  }, [status, isConnected, setModalOpen]);
 
   const handleOpenChange = (open: boolean) => {
     if (isUpdating && !open) {
@@ -31,9 +45,6 @@ export function FirmwareUpdateModal() {
   const handleStartUpdate = () => {
     installUpdate();
   };
-
-  // Close modal when update is complete or error after user acknowledges?
-  // Let's keep it open until user closes it after success/error.
 
   return (
     <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
@@ -60,7 +71,6 @@ export function FirmwareUpdateModal() {
                  <ol className="list-decimal list-inside space-y-1 ml-1">
                    <li>The update file will be downloaded securely.</li>
                    <li>Your device will reboot into bootloader mode.</li>
-                   <li>You will be asked to confirm the device connection again.</li>
                    <li>A "Save File" dialog will appear. Save the file to the "RPI-RP2" drive.</li>
                  </ol>
                </div>
@@ -92,7 +102,7 @@ export function FirmwareUpdateModal() {
 
               {status === 'waiting_for_device' && (
                 <p className="text-sm text-muted-foreground text-center bg-muted/50 p-2 rounded">
-                  Please check the popup window to confirm device connection.
+                  Waiting for device to reboot into bootloader mode...
                 </p>
               )}
               
