@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { PadConfigGroup } from "./PadConfigGroup";
 import { TimingSettings } from "./TimingSettings";
 import { ADCChannelSettings } from "./ADCChannelSettings";
-import { KeyMappingSettings } from "./KeyMappingSettings";
+import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
 import { ConfigActions } from "./ConfigActions";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
@@ -159,7 +159,7 @@ export function ConfigurationTab() {
           <ADCChannelSettings />
 
           {/* Key Mappings */}
-          <KeyMappingSettings />
+          <InteractiveKeyMapping />
         </>
       )}
 
