@@ -1,57 +1,57 @@
 import type { DeviceConfig, MonitorSettings } from "@/types";
 
 // HID Keyboard keycodes (USB HID Usage Tables)
-// Common defaults for Taiko controllers
+// Defaults matching GlobalConfiguration.h
 export const DEFAULT_DEVICE_CONFIG: DeviceConfig = {
   pads: {
-    kaLeft: { light: 800, heavy: 1200, cutoff: 4095 },
-    donLeft: { light: 800, heavy: 1200, cutoff: 4095 },
-    donRight: { light: 800, heavy: 1200, cutoff: 4095 },
-    kaRight: { light: 800, heavy: 1200, cutoff: 4095 },
+    kaLeft: { light: 100, heavy: 1500, cutoff: 4095 },
+    donLeft: { light: 100, heavy: 1500, cutoff: 4095 },
+    donRight: { light: 100, heavy: 1500, cutoff: 4095 },
+    kaRight: { light: 100, heavy: 1500, cutoff: 4095 },
   },
   doubleInputMode: false,
   timing: {
     donDebounce: 30,
     kaDebounce: 30,
-    crosstalkDebounce: 30,
-    individualDebounce: 19,
-    keyHoldTime: 25,
+    crosstalkDebounce: 45,
+    individualDebounce: 25,
+    keyHoldTime: 20,
   },
   keyMappings: {
     drumP1: {
-      kaLeft: 0x08,   // E
-      donLeft: 0x07,  // D
-      donRight: 0x09, // F
-      kaRight: 0x0C,  // I
+      kaLeft: 0x07,   // D
+      donLeft: 0x09,  // F
+      donRight: 0x0d, // J
+      kaRight: 0x0e,  // K
     },
     drumP2: {
-      kaLeft: 0x52,   // Up Arrow
-      donLeft: 0x50,  // Left Arrow
-      donRight: 0x4F,  // Right Arrow
-      kaRight: 0x51,  // Down Arrow
+      kaLeft: 0x06,   // C
+      donLeft: 0x05,  // B
+      donRight: 0x11, // N
+      kaRight: 0x36,  // ,
     },
     controller: {
       up: 0x52,       // Up Arrow
       down: 0x51,     // Down Arrow
       left: 0x50,     // Left Arrow
-      right: 0x4F,    // Right Arrow
-      north: 0x1A,    // W
-      east: 0x07,     // D
-      south: 0x16,    // S
-      west: 0x04,     // A
+      right: 0x4f,    // Right Arrow
+      north: 0x0f,    // L
+      east: 0x2a,     // Backspace
+      south: 0x28,    // Enter
+      west: 0x13,     // P
       l: 0x14,        // Q
       r: 0x08,        // E
-      start: 0x28,    // Enter
-      select: 0x2C,   // Space
-      home: 0x29,     // Escape
-      share: 0x2B,    // Tab
-      l3: 0x15,       // R
-      r3: 0x09,       // F
+      start: 0x29,    // Escape
+      select: 0x2b,   // Tab
+      home: 0x00,     // None
+      share: 0x00,    // None
+      l3: 0x00,       // None
+      r3: 0x00,       // None
     },
   },
   adcChannels: {
-    donLeft: 0,   // ADC channel 0
-    kaLeft: 1,    // ADC channel 1
+    donLeft: 1,   // ADC channel 1
+    kaLeft: 0,    // ADC channel 0
     donRight: 2,  // ADC channel 2
     kaRight: 3,   // ADC channel 3
   },
