@@ -13,7 +13,7 @@ import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 
 export function FirmwareUpdateModal() {
   const { firmwareUpdate, isConnected } = useDevice();
-  const { status, progress, error, latestRelease, modalOpen, setModalOpen, installUpdate } = firmwareUpdate;
+  const { status, progress, error, latestFirmware, modalOpen, setModalOpen, installUpdate } = firmwareUpdate;
 
   // Track if we reached 'complete' status to auto-close on reconnect
   const wasCompleteRef = useRef(false);
@@ -52,24 +52,19 @@ export function FirmwareUpdateModal() {
         <DialogHeader>
           <DialogTitle>Firmware Update</DialogTitle>
           <DialogDescription>
-            {status === 'available' && (latestRelease ? `Version ${latestRelease.tag_name} is available.` : "New version available.")}
+            {status === 'available' && (latestFirmware ? `Version ${latestFirmware.version} is available.` : "New version available.")}
             {status === 'idle' && "Check for firmware updates."}
             {status === 'complete' && "Update successful!"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
-          {status === 'available' && latestRelease && (
+          {status === 'available' && latestFirmware && (
             <div className="space-y-4">
-               <div className="bg-muted p-4 rounded-md text-sm max-h-[200px] overflow-y-auto">
-                 <p className="font-semibold mb-2">Release Notes:</p>
-                 <div className="whitespace-pre-wrap text-muted-foreground">{latestRelease.body}</div>
-               </div>
-               
                <div className="space-y-2 text-sm text-muted-foreground">
                  <p className="font-medium text-foreground">How it works:</p>
                  <ol className="list-decimal list-inside space-y-1 ml-1">
-                   <li>The update file will be downloaded securely.</li>
+                   <li>The update file will be downloaded.</li>
                    <li>Your device will reboot into bootloader mode.</li>
                    <li>A "Save File" dialog will appear. Save the file to the "RPI-RP2" drive.</li>
                  </ol>

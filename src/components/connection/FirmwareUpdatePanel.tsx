@@ -5,11 +5,11 @@ import { AlertCircle, Download, RefreshCw } from "lucide-react";
 
 export function FirmwareUpdatePanel() {
   const { isConnected, firmwareUpdate } = useDevice();
-  const { status, latestRelease, setModalOpen } = firmwareUpdate;
+  const { status, latestFirmware, setModalOpen } = firmwareUpdate;
 
   // Only show if connected and there's actually something to show (update available or in progress/error)
   const shouldShow = isConnected && (
-    status === 'available' || 
+    status === 'available' ||
     (status !== 'idle' && status !== 'checking')
   );
 
@@ -20,11 +20,11 @@ export function FirmwareUpdatePanel() {
   return (
     <Card className="border-amber-500/50 bg-amber-500/5">
       <CardContent className="py-4">
-        {status === 'available' && latestRelease && (
+        {status === 'available' && latestFirmware && (
           <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-1">
             <div className="flex items-center gap-2 text-sm text-amber-600 font-medium">
               <AlertCircle className="h-4 w-4" />
-              <span>New firmware available: {latestRelease.tag_name}</span>
+              <span>New firmware available: v{latestFirmware.version}</span>
             </div>
             <div className="flex gap-2">
                 <Button

@@ -112,26 +112,13 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
       setStatus('waiting_after_nuke');
       await new Promise(resolve => setTimeout(resolve, 5000));
 
-      // Pre-fetch firmware while waiting
-      const releaseResponse = await fetch('https://api.github.com/repos/LucaSilva-r/ITAIKO/releases/latest');
-      if (!releaseResponse.ok) {
-        throw new Error('Failed to fetch latest release info');
-      }
-      const releaseData = await releaseResponse.json();
-      const firmwareAsset = releaseData.assets?.find((a: { name: string }) => a.name.endsWith('.uf2'));
-
-      if (!firmwareAsset) {
-        throw new Error('No firmware file found in latest release');
-      }
-
-      // Download firmware via CORS proxy
-      const proxyUrl = `https://api.cors.lol/?url=${encodeURIComponent(firmwareAsset.browser_download_url)}`;
-      const firmwareResponse = await fetch(proxyUrl);
+      // Fetch firmware from local public folder
+      const firmwareResponse = await fetch('/firmware/ITAIKO.uf2');
       if (!firmwareResponse.ok) {
         throw new Error('Failed to download firmware');
       }
       firmwareBlobRef.current = await firmwareResponse.blob();
-      firmwareNameRef.current = firmwareAsset.name;
+      firmwareNameRef.current = 'ITAIKO.uf2';
 
       // Ready for user to save firmware
       setStatus('ready_to_flash');

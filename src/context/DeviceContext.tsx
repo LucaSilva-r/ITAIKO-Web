@@ -3,7 +3,7 @@ import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
 import { useDeviceStreaming, type TriggerState } from "@/hooks/useDeviceStreaming";
-import { useFirmwareUpdate, type GithubRelease, type UpdateStatus } from "@/hooks/useFirmwareUpdate";
+import { useFirmwareUpdate, type FirmwareInfo, type UpdateStatus } from "@/hooks/useFirmwareUpdate";
 import {
   DeviceCommand,
   type ConnectionStatus,
@@ -60,7 +60,7 @@ interface DeviceContextValue {
   // Firmware Update
   firmwareUpdate: {
     status: UpdateStatus;
-    latestRelease: GithubRelease | null;
+    latestFirmware: FirmwareInfo | null;
     error: string | null;
     progress: number;
     checkUpdate: () => Promise<void>;
@@ -208,7 +208,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       // Firmware Update
       firmwareUpdate: {
         status: firmwareUpdate.status,
-        latestRelease: firmwareUpdate.latestRelease,
+        latestFirmware: firmwareUpdate.latestFirmware,
         error: firmwareUpdate.error,
         progress: firmwareUpdate.progress,
         checkUpdate: firmwareUpdate.checkUpdate,
