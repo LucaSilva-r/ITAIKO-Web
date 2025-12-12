@@ -83,8 +83,6 @@ export function ConfigurationTab() {
 
   return (
     <div className="space-y-6">
-
-
       {/* Visual Drum */}
       <div className="flex flex-col items-center py-4">
         {/* Drum Container */}
@@ -172,11 +170,6 @@ export function ConfigurationTab() {
                                                                                                 />
 
                                                                                               </svg>        </div>
-        {!isConnected && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Connect the drum to see pad activity
-          </p>
-        )}
       </div>
 
       {/* Global Settings - Advanced only */}
