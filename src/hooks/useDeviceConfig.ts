@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { DeviceConfig, PadName, PadThresholds, TimingConfig, DeviceCommand, KeyMappings, ADCChannels } from "@/types";
 import { DeviceCommand as DeviceCommandValues } from "@/types";
 import {
@@ -18,6 +18,12 @@ interface UseDeviceConfigReturn {
   config: DeviceConfig;
   isLoading: boolean;
   isDirty: boolean;
+
+  // History
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
 
   // Actions
   readFromDevice: () => Promise<boolean>;
@@ -39,18 +45,21 @@ interface UseDeviceConfigReturn {
   updatePadThreshold: (
     pad: PadName,
     field: keyof PadThresholds,
-    value: number
+    value: number,
+    commit?: boolean
   ) => void;
-  updateTiming: (field: keyof TimingConfig, value: number) => void;
-  setDoubleInputMode: (enabled: boolean) => void;
+  updateTiming: (field: keyof TimingConfig, value: number, commit?: boolean) => void;
+  setDoubleInputMode: (enabled: boolean, commit?: boolean) => void;
   updateKeyMapping: (
     category: keyof KeyMappings,
     key: string,
-    value: number
+    value: number,
+    commit?: boolean
   ) => void;
   updateADCChannel: (
     pad: keyof ADCChannels,
-    channel: number
+    channel: number,
+    commit?: boolean
   ) => void;
 }
 
@@ -63,7 +72,67 @@ export function useDeviceConfig({
   const [savedConfig, setSavedConfig] = useState<DeviceConfig>(DEFAULT_DEVICE_CONFIG);
   const [isLoading, setIsLoading] = useState(false);
 
+  // History State
+  const [history, setHistory] = useState<DeviceConfig[]>([]);
+  const [future, setFuture] = useState<DeviceConfig[]>([]);
+  const [lastCommittedConfig, setLastCommittedConfig] = useState<DeviceConfig>(DEFAULT_DEVICE_CONFIG);
+
   const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
+
+  const undo = useCallback(() => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    const newHistory = history.slice(0, -1);
+
+    setFuture((prev) => [config, ...prev]);
+    setHistory(newHistory);
+    setConfig(previous);
+    setLastCommittedConfig(previous);
+  }, [history, config]);
+
+  const redo = useCallback(() => {
+    if (future.length === 0) return;
+    const next = future[0];
+    const newFuture = future.slice(1);
+
+    setHistory((prev) => [...prev, config]);
+    setFuture(newFuture);
+    setConfig(next);
+    setLastCommittedConfig(next);
+  }, [future, config]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Ctrl (or Cmd on Mac)
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') {
+           e.preventDefault();
+           if (e.shiftKey) {
+             redo();
+           } else {
+             undo();
+           }
+        } else if (e.key === 'y') {
+           e.preventDefault();
+           redo();
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
+  // Internal helper to handle history commit inside update functions
+  const handleCommit = (newConfig: DeviceConfig) => {
+    setHistory(h => {
+        const newH = [...h, lastCommittedConfig];
+        return newH.length > 50 ? newH.slice(newH.length - 50) : newH;
+    });
+    setFuture([]);
+    setLastCommittedConfig(newConfig);
+  };
 
   const readFromDevice = useCallback(async (): Promise<boolean> => {
     if (!isConnected) return false;
@@ -78,6 +147,12 @@ export function useDeviceConfig({
         const newConfig = settingsToConfig(settings, version);
         setConfig(newConfig);
         setSavedConfig(newConfig);
+        
+        // Reset history
+        setLastCommittedConfig(newConfig);
+        setHistory([]);
+        setFuture([]);
+        
         return true;
       }
 
@@ -128,36 +203,56 @@ export function useDeviceConfig({
   }, [isConnected, sendCommand, writeToDevice]);
 
   const resetToDefaults = useCallback((): void => {
-    setConfig(DEFAULT_DEVICE_CONFIG);
-  }, []);
+    setConfig((prev) => {
+        const next = DEFAULT_DEVICE_CONFIG;
+        handleCommit(next);
+        return next;
+    });
+  }, [lastCommittedConfig]);
 
   const resetPadThresholds = useCallback((): void => {
-    setConfig((prev) => ({
-      ...prev,
-      pads: DEFAULT_DEVICE_CONFIG.pads,
-    }));
-  }, []);
+    setConfig((prev) => {
+      const next = {
+        ...prev,
+        pads: DEFAULT_DEVICE_CONFIG.pads,
+      };
+      handleCommit(next);
+      return next;
+    });
+  }, [lastCommittedConfig]);
 
   const resetTiming = useCallback((): void => {
-    setConfig((prev) => ({
-      ...prev,
-      timing: DEFAULT_DEVICE_CONFIG.timing,
-    }));
-  }, []);
+    setConfig((prev) => {
+      const next = {
+        ...prev,
+        timing: DEFAULT_DEVICE_CONFIG.timing,
+      };
+      handleCommit(next);
+      return next;
+    });
+  }, [lastCommittedConfig]);
 
   const resetKeyMappings = useCallback((): void => {
-    setConfig((prev) => ({
-      ...prev,
-      keyMappings: DEFAULT_DEVICE_CONFIG.keyMappings,
-    }));
-  }, []);
+    setConfig((prev) => {
+        const next = {
+          ...prev,
+          keyMappings: DEFAULT_DEVICE_CONFIG.keyMappings,
+        };
+        handleCommit(next);
+        return next;
+    });
+  }, [lastCommittedConfig]);
 
   const resetADCChannels = useCallback((): void => {
-    setConfig((prev) => ({
-      ...prev,
-      adcChannels: DEFAULT_DEVICE_CONFIG.adcChannels,
-    }));
-  }, []);
+    setConfig((prev) => {
+        const next = {
+          ...prev,
+          adcChannels: DEFAULT_DEVICE_CONFIG.adcChannels,
+        };
+        handleCommit(next);
+        return next;
+    });
+  }, [lastCommittedConfig]);
 
   const exportConfig = useCallback((): void => {
     // Create a clean config object without firmwareVersion (device-specific)
@@ -194,64 +289,86 @@ export function useDeviceConfig({
       }
 
       // Merge with current config, preserving firmwareVersion
-      setConfig((prev) => ({
-        ...prev,
-        pads: imported.pads ?? prev.pads,
-        doubleInputMode: imported.doubleInputMode ?? prev.doubleInputMode,
-        timing: imported.timing ?? prev.timing,
-        keyMappings: imported.keyMappings ?? prev.keyMappings,
-        adcChannels: imported.adcChannels ?? prev.adcChannels,
-      }));
+      setConfig((prev) => {
+          const next = {
+            ...prev,
+            pads: imported.pads ?? prev.pads,
+            doubleInputMode: imported.doubleInputMode ?? prev.doubleInputMode,
+            timing: imported.timing ?? prev.timing,
+            keyMappings: imported.keyMappings ?? prev.keyMappings,
+            adcChannels: imported.adcChannels ?? prev.adcChannels,
+          };
+          handleCommit(next);
+          return next;
+      });
 
       return true;
     } catch (err) {
       console.error("Failed to import config:", err);
       return false;
     }
-  }, []);
+  }, [lastCommittedConfig]);
 
   const updatePadThreshold = useCallback(
-    (pad: PadName, field: keyof PadThresholds, value: number): void => {
-      setConfig((prev) => ({
-        ...prev,
-        pads: {
-          ...prev.pads,
-          [pad]: {
-            ...prev.pads[pad],
-            [field]: value,
+    (pad: PadName, field: keyof PadThresholds, value: number, commit = true): void => {
+      setConfig((prev) => {
+        const next = {
+          ...prev,
+          pads: {
+            ...prev.pads,
+            [pad]: {
+              ...prev.pads[pad],
+              [field]: value,
+            },
           },
-        },
-      }));
+        };
+        if (commit) {
+            handleCommit(next);
+        }
+        return next;
+      });
     },
-    []
+    [lastCommittedConfig]
   );
 
   const updateTiming = useCallback(
-    (field: keyof TimingConfig, value: number): void => {
-      setConfig((prev) => ({
-        ...prev,
-        timing: {
-          ...prev.timing,
-          [field]: value,
-        },
-      }));
+    (field: keyof TimingConfig, value: number, commit = true): void => {
+      setConfig((prev) => {
+        const next = {
+          ...prev,
+          timing: {
+            ...prev.timing,
+            [field]: value,
+          },
+        };
+        if (commit) {
+            handleCommit(next);
+        }
+        return next;
+      });
     },
-    []
+    [lastCommittedConfig]
   );
 
-  const setDoubleInputMode = useCallback((enabled: boolean): void => {
-    setConfig((prev) => ({
-      ...prev,
-      doubleInputMode: enabled,
-    }));
-  }, []);
+  const setDoubleInputMode = useCallback((enabled: boolean, commit = true): void => {
+    setConfig((prev) => {
+      const next = {
+        ...prev,
+        doubleInputMode: enabled,
+      };
+      if (commit) {
+          handleCommit(next);
+      }
+      return next;
+    });
+  }, [lastCommittedConfig]);
 
   const updateKeyMapping = useCallback(
-    (category: keyof KeyMappings, key: string, value: number): void => {
+    (category: keyof KeyMappings, key: string, value: number, commit = true): void => {
       setConfig((prev) => {
         if (!prev.keyMappings) return prev;
 
-        return {
+        const next = {
           ...prev,
           keyMappings: {
             ...prev.keyMappings,
@@ -261,32 +378,44 @@ export function useDeviceConfig({
             },
           },
         };
+        if (commit) {
+            handleCommit(next);
+        }
+        return next;
       });
     },
-    []
+    [lastCommittedConfig]
   );
 
   const updateADCChannel = useCallback(
-    (pad: keyof ADCChannels, channel: number): void => {
+    (pad: keyof ADCChannels, channel: number, commit = true): void => {
       setConfig((prev) => {
         if (!prev.adcChannels) return prev;
 
-        return {
+        const next = {
           ...prev,
           adcChannels: {
             ...prev.adcChannels,
             [pad]: channel,
           },
         };
+        if (commit) {
+            handleCommit(next);
+        }
+        return next;
       });
     },
-    []
+    [lastCommittedConfig]
   );
 
   return {
     config,
     isLoading,
     isDirty,
+    canUndo: history.length > 0,
+    canRedo: future.length > 0,
+    undo,
+    redo,
     readFromDevice,
     writeToDevice,
     saveToFlash,
