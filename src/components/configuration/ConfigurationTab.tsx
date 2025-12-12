@@ -11,6 +11,15 @@ import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
 import { RotateCcw, Download, Upload } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useSearchParams } from "react-router-dom";
 
 export function ConfigurationTab() {
   const {
@@ -23,10 +32,17 @@ export function ConfigurationTab() {
     saveToFlash,
     configDirty,
     resetPadThresholds,
+    resetToDefaults,
     exportConfig,
     importConfig,
   } = useDevice();
-  const [advancedMode, setAdvancedMode] = useState(false);
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const advancedParam = searchParams.get("advanced");
+
+  const [advancedMode, setAdvancedModeState] = useState(advancedParam === "true");
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [backupReset, setBackupReset] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportClick = () => {
@@ -41,6 +57,25 @@ export function ConfigurationTab() {
       e.target.value = "";
     }
   };
+
+  const handleFactoryReset = () => {
+    if (backupReset) {
+      exportConfig();
+    }
+    resetToDefaults();
+    setShowResetDialog(false);
+  };
+
+  const handleAdvancedModeChange = (checked: boolean) => {
+    setAdvancedModeState(checked);
+    if (checked) {
+      searchParams.set("advanced", "true");
+    } else {
+      searchParams.delete("advanced");
+    }
+    setSearchParams(searchParams);
+  };
+
   const isFirstRender = useRef(true);
 
   // Use ref to always have latest function without causing effect re-runs
@@ -244,6 +279,19 @@ export function ConfigurationTab() {
                 Export Config
               </Button>
             </div>
+            
+            <div className="mt-4 pt-4 border-t">
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={() => setShowResetDialog(true)}
+                disabled={!isConnected}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Factory Reset
+              </Button>
+            </div>
+
             <p className="text-xs text-muted-foreground mt-2">
               Export your current configuration to a JSON file, or import a previously saved config.
             </p>
@@ -264,11 +312,33 @@ export function ConfigurationTab() {
             <Switch
               id="advanced-mode"
               checked={advancedMode}
-              onCheckedChange={setAdvancedMode}
+              onCheckedChange={handleAdvancedModeChange}
             />
           </div>
         </CardContent>
       </Card>
+
+      {/* Factory Reset Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Factory Reset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reset all configuration settings to their default values? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center space-x-2 py-4">
+            <Switch id="backup-reset" checked={backupReset} onCheckedChange={setBackupReset} />
+            <Label htmlFor="backup-reset">Backup configuration before resetting</Label>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResetDialog(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleFactoryReset}>Reset to Defaults</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

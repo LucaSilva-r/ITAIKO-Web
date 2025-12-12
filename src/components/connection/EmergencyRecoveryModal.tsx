@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2, CheckCircle2, Skull, Download } from "lucide-react";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 type RecoveryStatus =
   | 'idle'
@@ -29,9 +31,10 @@ interface EmergencyRecoveryModalProps {
 }
 
 export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecoveryModalProps) {
-  const { rebootToBootsel, isConnected } = useDevice();
+  const { rebootToBootsel, isConnected, exportConfig } = useDevice();
   const [status, setStatus] = useState<RecoveryStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [backupEnabled, setBackupEnabled] = useState(true);
 
   // Pre-fetched data
   const nukeBlobRef = useRef<Blob | null>(null);
@@ -58,6 +61,10 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
   // Step 1: Start recovery (reboot if connected, or go straight to nuke step)
   const handleStartRecovery = async () => {
     setError(null);
+
+    if (isConnected && backupEnabled) {
+      exportConfig();
+    }
 
     try {
       if (isConnected) {
@@ -329,6 +336,13 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
                   </div>
                 </div>
               </div>
+
+              {isConnected && (
+                <div className="flex items-center space-x-2 py-4 border-t">
+                  <Switch id="backup-recovery" checked={backupEnabled} onCheckedChange={setBackupEnabled} />
+                  <Label htmlFor="backup-recovery">Backup configuration before wiping</Label>
+                </div>
+              )}
 
               {!isConnected && (
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded-md space-y-3">

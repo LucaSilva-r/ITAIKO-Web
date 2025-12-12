@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import {
   Dialog,
@@ -10,10 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export function FirmwareUpdateModal() {
-  const { firmwareUpdate, isConnected } = useDevice();
+  const { firmwareUpdate, isConnected, exportConfig } = useDevice();
   const { status, progress, error, latestFirmware, modalOpen, setModalOpen, installUpdate } = firmwareUpdate;
+  const [backupEnabled, setBackupEnabled] = useState(true);
 
   // Track if we reached 'complete' status to auto-close on reconnect
   const wasCompleteRef = useRef(false);
@@ -43,6 +46,9 @@ export function FirmwareUpdateModal() {
   };
 
   const handleStartUpdate = () => {
+    if (backupEnabled) {
+      exportConfig();
+    }
     installUpdate();
   };
 
@@ -68,6 +74,11 @@ export function FirmwareUpdateModal() {
                    <li>Your device will reboot into bootloader mode.</li>
                    <li>A "Save File" dialog will appear. Save the file to the "RPI-RP2" drive.</li>
                  </ol>
+               </div>
+
+               <div className="flex items-center space-x-2 py-4 border-t">
+                 <Switch id="backup-update" checked={backupEnabled} onCheckedChange={setBackupEnabled} />
+                 <Label htmlFor="backup-update">Backup configuration before updating</Label>
                </div>
             </div>
           )}

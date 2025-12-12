@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { compareVersions } from '../lib/utils';
+import { useSearchParams } from 'react-router-dom';
 
 export interface FirmwareInfo {
   version: string;
@@ -14,6 +15,9 @@ export function useFirmwareUpdate(currentVersion?: string) {
   const [latestFirmware, setLatestFirmware] = useState<FirmwareInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
+  const [searchParams] = useSearchParams();
+
+  const forceUpdate = useMemo(() => searchParams.get('update') === 'true', [searchParams]);
 
   const checkUpdate = useCallback(async () => {
     // Reset state if currentVersion is undefined or empty
@@ -34,13 +38,15 @@ export function useFirmwareUpdate(currentVersion?: string) {
       }
       const latestVersion = (await response.text()).trim();
 
-      if (compareVersions(latestVersion, currentVersion) > 0) {
+      const firmwareInfo: FirmwareInfo = {
+        version: latestVersion,
+        firmwareUrl: '/firmware/ITAIKO.uf2',
+        firmwareName: 'ITAIKO.uf2',
+      };
+
+      if (forceUpdate || compareVersions(latestVersion, currentVersion) > 0) {
         setStatus('available');
-        setLatestFirmware({
-          version: latestVersion,
-          firmwareUrl: '/firmware/ITAIKO.uf2',
-          firmwareName: 'ITAIKO.uf2',
-        });
+        setLatestFirmware(firmwareInfo);
       } else {
         setStatus('idle');
       }
@@ -49,14 +55,14 @@ export function useFirmwareUpdate(currentVersion?: string) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setStatus('idle');
     }
-  }, [currentVersion]);
+  }, [currentVersion, forceUpdate]);
 
-  // Automatically check when currentVersion changes and is defined
+  // Automatically check when currentVersion changes and is defined, or when forceUpdate changes
   useEffect(() => {
     if (currentVersion) {
       checkUpdate();
     }
-  }, [currentVersion, checkUpdate]);
+  }, [currentVersion, checkUpdate, forceUpdate]);
 
   const installUpdate = useCallback(async (rebootCallback: () => Promise<void>) => {
     if (!latestFirmware) return;
