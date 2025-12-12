@@ -10,9 +10,16 @@ import { ADCChannelSettings } from "./ADCChannelSettings";
 import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
-import { RotateCcw } from "lucide-react";
-
-
+import { RotateCcw, Download, Upload } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useSearchParams } from "react-router-dom";
 
 export function ConfigurationTab() {
   const {
@@ -25,8 +32,50 @@ export function ConfigurationTab() {
     saveToFlash,
     configDirty,
     resetPadThresholds,
+    resetToDefaults,
+    exportConfig,
+    importConfig,
   } = useDevice();
-  const [advancedMode, setAdvancedMode] = useState(false);
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const advancedParam = searchParams.get("advanced");
+
+  const [advancedMode, setAdvancedModeState] = useState(advancedParam === "true");
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [backupReset, setBackupReset] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await importConfig(file);
+      // Reset input so the same file can be selected again
+      e.target.value = "";
+    }
+  };
+
+  const handleFactoryReset = () => {
+    if (backupReset) {
+      exportConfig();
+    }
+    resetToDefaults();
+    setShowResetDialog(false);
+  };
+
+  const handleAdvancedModeChange = (checked: boolean) => {
+    setAdvancedModeState(checked);
+    if (checked) {
+      searchParams.set("advanced", "true");
+    } else {
+      searchParams.delete("advanced");
+    }
+    setSearchParams(searchParams);
+  };
+
   const isFirstRender = useRef(true);
 
   // Use ref to always have latest function without causing effect re-runs
@@ -67,171 +116,192 @@ export function ConfigurationTab() {
 
   return (
     <div className="space-y-6">
-
-
       {/* Visual Drum */}
-      <div className="flex flex-col items-center py-4">
-        {/* Drum Container */}
-        <div className="relative w-144 h-144">
+      <div className="flex flex-col items-center py-4 relative">
+        {/* Drum Container - Blurred when not ready */}
+        <div 
+          className={`relative w-144 h-144 transition-all duration-500 ${!isReady ? "blur-sm opacity-50 grayscale" : ""}`}
+        >
           {/* Background Image */}
-                        <img
-                          src="/visual_drum.png"
-                          alt="Visual Drum Background"
-                          className="absolute inset-0 w-full h-full object-contain translate-x-[2px]"
-                        />
-                                                                                              {/* Drum SVG Overlay */}
+          <img
+            src="/visual_drum.png"
+            alt="Visual Drum Background"
+            className="absolute inset-0 w-full h-full object-contain translate-x-[2px]"
+          />
+          {/* Drum SVG Overlay */}
+          <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full">
+            {/* Ka Left - left half of outer ring */}
+            <path
+              d="M 100 23 A 63 63 0 0 0 100 149 L 100 135 A 49 49 0 0 1 100 37 Z"
+              fill={PAD_COLORS.kaLeft}
+              style={{
+                opacity: triggers.kaLeft ? 0.6 : 0,
+                transition: triggers.kaLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+              }}
+            />
+            {/* Ka Right - right half of outer ring */}
+            <path
+              d="M 100 23 A 63 63 0 0 1 100 149 L 100 135 A 49 49 0 0 0 100 37 Z"
+              fill={PAD_COLORS.kaRight}
+              style={{
+                opacity: triggers.kaRight ? 0.6 : 0,
+                transition: triggers.kaRight ? "opacity 0ms" : "opacity 200ms ease-out",
+              }}
+            />
+            {/* Don Left - left half of inner circle */}
+            <path
+              d="M 100 37 A 49 49 0 0 0 100 135 L 100 86 Z"
+              fill={PAD_COLORS.donLeft}
+              style={{
+                opacity: triggers.donLeft ? 0.6 : 0,
+                transition: triggers.donLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+              }}
+            />
+            {/* Don Right - right half of inner circle */}
+            <path
+              d="M 100 37 A 49 49 0 0 1 100 135 L 100 86 Z"
+              fill={PAD_COLORS.donRight}
+              style={{
+                opacity: triggers.donRight ? 0.6 : 0,
+                transition: triggers.donRight ? "opacity 0ms" : "opacity 200ms ease-out",
+              }}
+            />
+          </svg>
+        </div>
 
-                                                                                              <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full">
-
-                                                                                                {/* Ka Left - left half of outer ring */}
-
-                                                                                                <path
-
-                                                                                                  d="M 100 23 A 63 63 0 0 0 100 149 L 100 135 A 49 49 0 0 1 100 37 Z"
-
-                                                                                                  fill={PAD_COLORS.kaLeft}
-
-                                                                                                  style={{
-
-                                                                                                    opacity: triggers.kaLeft ? 0.6 : 0,
-
-                                                                                                    transition: triggers.kaLeft ? "opacity 0ms" : "opacity 200ms ease-out",
-
-                                                                                                  }}
-
-                                                                                                />
-
-                                                                                                {/* Ka Right - right half of outer ring */}
-
-                                                                                                <path
-
-                                                                                                  d="M 100 23 A 63 63 0 0 1 100 149 L 100 135 A 49 49 0 0 0 100 37 Z"
-
-                                                                                                  fill={PAD_COLORS.kaRight}
-
-                                                                                                  style={{
-
-                                                                                                    opacity: triggers.kaRight ? 0.6 : 0,
-
-                                                                                                    transition: triggers.kaRight ? "opacity 0ms" : "opacity 200ms ease-out",
-
-                                                                                                  }}
-
-                                                                                                />
-
-                                                                                                {/* Don Left - left half of inner circle */}
-
-                                                                                                <path
-
-                                                                                                  d="M 100 37 A 49 49 0 0 0 100 135 L 100 86 Z"
-
-                                                                                                  fill={PAD_COLORS.donLeft}
-
-                                                                                                  style={{
-
-                                                                                                    opacity: triggers.donLeft ? 0.6 : 0,
-
-                                                                                                    transition: triggers.donLeft ? "opacity 0ms" : "opacity 200ms ease-out",
-
-                                                                                                  }}
-
-                                                                                                />
-
-                                                                                                {/* Don Right - right half of inner circle */}
-
-                                                                                                <path
-
-                                                                                                  d="M 100 37 A 49 49 0 0 1 100 135 L 100 86 Z"
-
-                                                                                                  fill={PAD_COLORS.donRight}
-
-                                                                                                  style={{
-
-                                                                                                    opacity: triggers.donRight ? 0.6 : 0,
-
-                                                                                                    transition: triggers.donRight ? "opacity 0ms" : "opacity 200ms ease-out",
-
-                                                                                                  }}
-
-                                                                                                />
-
-                                                                                              </svg>        </div>
-        {!isConnected && (
-          <p className="text-sm text-muted-foreground mt-2">
-            Connect the drum to see pad activity
-          </p>
+        {/* Connect Overlay - Centered over the drum */}
+        {!isReady && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <div className="bg-background/80 backdrop-blur-md px-6 py-3 rounded-2xl border shadow-sm text-center">
+              <p className="text-lg font-semibold">Connect your drum</p>
+              <p className="text-xs text-muted-foreground mt-1">to start configuration</p>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Global Settings - Advanced only */}
-      {advancedMode && (
+      {/* Configuration Settings - Deactivated when not ready */}
+      <div className={`space-y-6 transition-all duration-500 ${!isReady ? "pointer-events-none opacity-50" : ""}`}>
+        {/* Global Settings - Advanced only */}
+        {advancedMode && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                Global Settings
+                <HelpButton helpKey="global-settings" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="double-mode">Allow Double Inputs</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Enable heavy trigger threshold for fast double hits
+                  </p>
+                </div>
+                <Switch
+                  id="double-mode"
+                  checked={config.doubleInputMode}
+                  onCheckedChange={setDoubleInputMode}
+                  disabled={!isConnected}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pad Configuration Grid */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium flex items-center gap-2">
+              Pad Thresholds
+              <HelpButton helpKey="pad-thresholds" />
+            </h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={resetPadThresholds}
+              disabled={!isConnected}
+              title="Reset pad thresholds to defaults"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {PAD_NAMES.map((pad) => (
+              <PadConfigGroup key={pad} pad={pad} simpleMode={!advancedMode} />
+            ))}
+          </div>
+        </div>
+
+        {/* Advanced Settings */}
+        {advancedMode && (
+          <>
+            {/* Timing Settings */}
+            <TimingSettings />
+
+            {/* ADC Channel Mapping */}
+            <ADCChannelSettings />
+
+            {/* Key Mappings */}
+            <InteractiveKeyMapping />
+          </>
+        )}
+
+        {/* Import/Export Config */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Global Settings
-              <HelpButton helpKey="global-settings" />
-            </CardTitle>
+          <CardHeader>
+            <CardTitle className="text-base">Backup & Restore</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="double-mode">Allow Double Inputs</Label>
-                <p className="text-sm text-muted-foreground">
-                  Enable heavy trigger threshold for fast double hits
-                </p>
-              </div>
-              <Switch
-                id="double-mode"
-                checked={config.doubleInputMode}
-                onCheckedChange={setDoubleInputMode}
-                disabled={!isConnected}
+            <div className="flex gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".json"
+                className="hidden"
               />
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleImportClick}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Import Config
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={exportConfig}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export Config
+              </Button>
             </div>
+            
+            <div className="mt-4 pt-4 border-t">
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={() => setShowResetDialog(true)}
+                disabled={!isConnected}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Factory Reset
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-2">
+              Export your current configuration to a JSON file, or import a previously saved config.
+            </p>
           </CardContent>
         </Card>
-      )}
-
-      {/* Pad Configuration Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium flex items-center gap-2">
-            Pad Thresholds
-            <HelpButton helpKey="pad-thresholds" />
-          </h3>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={resetPadThresholds}
-            disabled={!isConnected}
-            title="Reset pad thresholds to defaults"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {PAD_NAMES.map((pad) => (
-            <PadConfigGroup key={pad} pad={pad} simpleMode={!advancedMode} />
-          ))}
-        </div>
       </div>
 
-      {/* Advanced Settings */}
-      {advancedMode && (
-        <>
-          {/* Timing Settings */}
-          <TimingSettings />
-
-          {/* ADC Channel Mapping */}
-          <ADCChannelSettings />
-
-          {/* Key Mappings */}
-          <InteractiveKeyMapping />
-        </>
-      )}
-
-      {/* Mode Toggle */}
+      {/* Mode Toggle - Always accessible */}
       <Card>
-        <CardContent className="py-4">
+        <CardContent >
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="advanced-mode">Advanced Mode</Label>
@@ -242,11 +312,33 @@ export function ConfigurationTab() {
             <Switch
               id="advanced-mode"
               checked={advancedMode}
-              onCheckedChange={setAdvancedMode}
+              onCheckedChange={handleAdvancedModeChange}
             />
           </div>
         </CardContent>
       </Card>
+
+      {/* Factory Reset Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Factory Reset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reset all configuration settings to their default values? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center space-x-2 py-4">
+            <Switch id="backup-reset" checked={backupReset} onCheckedChange={setBackupReset} />
+            <Label htmlFor="backup-reset">Backup configuration before resetting</Label>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResetDialog(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleFactoryReset}>Reset to Defaults</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

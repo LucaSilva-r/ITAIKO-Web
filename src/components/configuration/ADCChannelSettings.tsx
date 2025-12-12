@@ -1,5 +1,5 @@
 import { useDevice } from "@/context/DeviceContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,7 +70,9 @@ export function ADCChannelSettings() {
           <CardTitle className="text-base flex items-center gap-2">
             ADC Channel Mapping
             <HelpButton helpKey="adc-channels" />
+
           </CardTitle>
+
           <Button
             variant="ghost"
             size="icon"
@@ -81,11 +83,12 @@ export function ADCChannelSettings() {
             <RotateCcw className="h-4 w-4" />
           </Button>
         </div>
+        <CardDescription>
+          Configure which ADC channels read each drum pad. Useful for older drums with different wiring.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground mb-4">
-          Configure which ADC channels read each drum pad. Useful for older drums with different wiring.
-        </p>
+
         <div className="space-y-3">
           <ADCChannelSelect
             label="Don Left"

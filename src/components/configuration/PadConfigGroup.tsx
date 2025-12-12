@@ -6,10 +6,72 @@ import { Input } from "@/components/ui/input";
 import type { PadName } from "@/types";
 import { PAD_LABELS, PAD_COLORS } from "@/types";
 import { THRESHOLD_MIN, THRESHOLD_MAX } from "@/lib/default-config";
+import { useEffect, useRef } from "react";
 
 interface PadConfigGroupProps {
   pad: PadName;
   simpleMode?: boolean;
+}
+
+interface PadThresholdSettingProps {
+  label: string;
+  id: string;
+  value: number;
+  onChange: (value: number, commit?: boolean) => void;
+  disabled: boolean;
+}
+
+function PadThresholdSetting({
+  label,
+  id,
+  value,
+  onChange,
+  disabled,
+}: PadThresholdSettingProps) {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value, 10);
+    if (!isNaN(val)) {
+      const clamped = Math.max(THRESHOLD_MIN, Math.min(THRESHOLD_MAX, val));
+      onChange(clamped, true);
+    }
+  };
+
+  const handleSliderChange = (newValue: number[]) => {
+    onChange(newValue[0], false);
+  };
+
+  const handleSliderCommit = (newValue: number[]) => {
+    onChange(newValue[0], true);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={id} className="text-sm">
+          {label}
+        </Label>
+        <Input
+          id={id}
+          type="number"
+          value={value}
+          onChange={handleInputChange}
+          className="w-20 h-8 text-right"
+          min={THRESHOLD_MIN}
+          max={THRESHOLD_MAX}
+          disabled={disabled}
+        />
+      </div>
+      <Slider
+        value={[value]}
+        onValueChange={handleSliderChange}
+        onValueCommit={handleSliderCommit}
+        min={THRESHOLD_MIN}
+        max={THRESHOLD_MAX}
+        step={5}
+        disabled={disabled}
+      />
+    </div>
+  );
 }
 
 export function PadConfigGroup({ pad, simpleMode = false }: PadConfigGroupProps) {
@@ -17,27 +79,9 @@ export function PadConfigGroup({ pad, simpleMode = false }: PadConfigGroupProps)
   const thresholds = config.pads[pad];
   const showHeavy = config.doubleInputMode && !simpleMode;
 
-  const handleSliderChange = (
-    field: "light" | "heavy" | "cutoff",
-    value: number[]
-  ) => {
-    updatePadThreshold(pad, field, value[0]);
-  };
-
-  const handleInputChange = (
-    field: "light" | "heavy" | "cutoff",
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = parseInt(e.target.value, 10);
-    if (!isNaN(value)) {
-      const clamped = Math.max(THRESHOLD_MIN, Math.min(THRESHOLD_MAX, value));
-      updatePadThreshold(pad, field, clamped);
-    }
-  };
-
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="">
         <CardTitle className="flex items-center gap-2 text-base">
           <div
             className="w-3 h-3 rounded-full"
@@ -48,88 +92,34 @@ export function PadConfigGroup({ pad, simpleMode = false }: PadConfigGroupProps)
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Light Threshold */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`${pad}-light`} className="text-sm">
-              Light Trigger
-            </Label>
-            <Input
-              id={`${pad}-light`}
-              type="number"
-              value={thresholds.light}
-              onChange={(e) => handleInputChange("light", e)}
-              className="w-20 h-8 text-right"
-              min={THRESHOLD_MIN}
-              max={THRESHOLD_MAX}
-              disabled={!isConnected}
-            />
-          </div>
-          <Slider
-            value={[thresholds.light]}
-            onValueChange={(v) => handleSliderChange("light", v)}
-            min={THRESHOLD_MIN}
-            max={THRESHOLD_MAX}
-            step={1}
-            disabled={!isConnected}
-          />
-        </div>
+        <PadThresholdSetting
+          label="Light Trigger"
+          id={`${pad}-light`}
+          value={thresholds.light}
+          onChange={(val, commit) => updatePadThreshold(pad, "light", val, commit)}
+          disabled={!isConnected}
+        />
 
         {/* Heavy Threshold (only when double mode enabled) */}
         {showHeavy && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor={`${pad}-heavy`} className="text-sm">
-                Heavy Trigger
-              </Label>
-              <Input
-                id={`${pad}-heavy`}
-                type="number"
-                value={thresholds.heavy}
-                onChange={(e) => handleInputChange("heavy", e)}
-                className="w-20 h-8 text-right"
-                min={THRESHOLD_MIN}
-                max={THRESHOLD_MAX}
-                disabled={!isConnected}
-              />
-            </div>
-            <Slider
-              value={[thresholds.heavy]}
-              onValueChange={(v) => handleSliderChange("heavy", v)}
-              min={THRESHOLD_MIN}
-              max={THRESHOLD_MAX}
-              step={1}
-              disabled={!isConnected}
-            />
-          </div>
+          <PadThresholdSetting
+            label="Heavy Trigger"
+            id={`${pad}-heavy`}
+            value={thresholds.heavy}
+            onChange={(val, commit) => updatePadThreshold(pad, "heavy", val, commit)}
+            disabled={!isConnected}
+          />
         )}
 
         {/* Cutoff Threshold - Advanced only */}
         {!simpleMode && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor={`${pad}-cutoff`} className="text-sm">
-                Cutoff
-              </Label>
-              <Input
-                id={`${pad}-cutoff`}
-                type="number"
-                value={thresholds.cutoff}
-                onChange={(e) => handleInputChange("cutoff", e)}
-                className="w-20 h-8 text-right"
-                min={THRESHOLD_MIN}
-                max={THRESHOLD_MAX}
-                disabled={!isConnected}
-              />
-            </div>
-            <Slider
-              value={[thresholds.cutoff]}
-              onValueChange={(v) => handleSliderChange("cutoff", v)}
-              min={THRESHOLD_MIN}
-              max={THRESHOLD_MAX}
-              step={1}
-              disabled={!isConnected}
-            />
-          </div>
+          <PadThresholdSetting
+            label="Cutoff"
+            id={`${pad}-cutoff`}
+            value={thresholds.cutoff}
+            onChange={(val, commit) => updatePadThreshold(pad, "cutoff", val, commit)}
+            disabled={!isConnected}
+          />
         )}
       </CardContent>
     </Card>

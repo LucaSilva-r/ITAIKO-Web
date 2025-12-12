@@ -145,11 +145,13 @@ export interface MonitorSettings {
 }
 
 // Settings index mapping (firmware protocol)
+// Note: Protocol order is donLeft, kaLeft, donRight, kaRight for thresholds
+// but kaLeft, donLeft, donRight, kaRight for key mappings
 export const SETTING_INDICES = {
   // Light thresholds (0-3)
   lightThreshold: {
-    kaLeft: 0,
-    donLeft: 1,
+    donLeft: 0,
+    kaLeft: 1,
     donRight: 2,
     kaRight: 3,
   },
@@ -163,15 +165,15 @@ export const SETTING_INDICES = {
   doubleInputMode: 9,
   // Heavy thresholds (10-13)
   heavyThreshold: {
-    kaLeft: 10,
-    donLeft: 11,
+    donLeft: 10,
+    kaLeft: 11,
     donRight: 12,
     kaRight: 13,
   },
   // Cutoff thresholds (14-17)
   cutoffThreshold: {
-    kaLeft: 14,
-    donLeft: 15,
+    donLeft: 14,
+    kaLeft: 15,
     donRight: 16,
     kaRight: 17,
   },

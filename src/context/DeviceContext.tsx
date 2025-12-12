@@ -45,6 +45,8 @@ interface DeviceContextValue {
   setDoubleInputMode: (enabled: boolean) => void;
   updateKeyMapping: (category: keyof KeyMappings, key: string, value: number) => void;
   updateADCChannel: (pad: keyof ADCChannels, channel: number) => void;
+  exportConfig: () => void;
+  importConfig: (file: File) => Promise<boolean>;
   rebootToBootsel: () => Promise<void>;
 
   // Streaming
@@ -193,6 +195,8 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       setDoubleInputMode: deviceConfig.setDoubleInputMode,
       updateKeyMapping: deviceConfig.updateKeyMapping,
       updateADCChannel: deviceConfig.updateADCChannel,
+      exportConfig: deviceConfig.exportConfig,
+      importConfig: deviceConfig.importConfig,
       rebootToBootsel,
 
       // Streaming

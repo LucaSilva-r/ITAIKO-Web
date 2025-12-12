@@ -13,7 +13,7 @@ interface TimingSettingProps {
   label: string;
   field: keyof TimingConfig;
   value: number;
-  onChange: (field: keyof TimingConfig, value: number) => void;
+  onChange: (field: keyof TimingConfig, value: number, commit?: boolean) => void;
   disabled?: boolean;
 }
 
@@ -25,14 +25,18 @@ function TimingSetting({
   disabled,
 }: TimingSettingProps) {
   const handleSliderChange = (newValue: number[]) => {
-    onChange(field, newValue[0]);
+    onChange(field, newValue[0], false);
+  };
+
+  const handleSliderCommit = (newValue: number[]) => {
+    onChange(field, newValue[0], true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const parsed = parseInt(e.target.value, 10);
     if (!isNaN(parsed)) {
       const clamped = Math.max(TIMING_MIN, Math.min(TIMING_MAX, parsed));
-      onChange(field, clamped);
+      onChange(field, clamped, true);
     }
   };
 
@@ -56,10 +60,12 @@ function TimingSetting({
       <Slider
         value={[value]}
         onValueChange={handleSliderChange}
+        onValueCommit={handleSliderCommit}
         min={TIMING_MIN}
         max={TIMING_MAX}
-        step={1}
+        step={5}
         disabled={disabled}
+        
       />
     </div>
   );
@@ -71,7 +77,7 @@ export function TimingSettings() {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             Timing Settings
