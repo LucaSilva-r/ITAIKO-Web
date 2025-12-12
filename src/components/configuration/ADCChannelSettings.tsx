@@ -1,6 +1,7 @@
 import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import type { ADCChannels } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
+import { RotateCcw } from "lucide-react";
 
 interface ADCChannelSelectProps {
   label: string;
@@ -53,7 +55,7 @@ function ADCChannelSelect({
 }
 
 export function ADCChannelSettings() {
-  const { config, updateADCChannel, isConnected } = useDevice();
+  const { config, updateADCChannel, isConnected, resetADCChannels } = useDevice();
   const adcChannels = config.adcChannels;
 
   // Don't render if ADC channels aren't supported by the firmware
@@ -64,10 +66,21 @@ export function ADCChannelSettings() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          ADC Channel Mapping
-          <HelpButton helpKey="adc-channels" />
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            ADC Channel Mapping
+            <HelpButton helpKey="adc-channels" />
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={resetADCChannels}
+            disabled={!isConnected}
+            title="Reset ADC channels to defaults"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-4">

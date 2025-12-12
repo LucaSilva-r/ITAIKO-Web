@@ -157,7 +157,7 @@ export function useWebSerial(): UseWebSerialReturn {
               buffer = buffer.slice(newlineIndex + 1);
 
               if (line) {
-                if (new URLSearchParams(window.location.search).get("debug") === "true") {
+                if (new URLSearchParams(window.location.search).get("rx") === "true") {
                   console.log(`[Serial RX] ${line}`);
                 }
 
@@ -315,7 +315,7 @@ export function useWebSerial(): UseWebSerialReturn {
   const sendCommand = useCallback(async (command: DeviceCommand, data?: string): Promise<void> => {
       if (!writerRef.current) throw new Error("Not connected");
       const cmdStr = data ? `${command}\n${data}\n` : `${command}\n`;
-      if (new URLSearchParams(window.location.search).get("debug") === "true") {
+      if (new URLSearchParams(window.location.search).get("tx") === "true") {
         console.log(`[Serial TX] ${cmdStr.trim()}`);
       }
       await writerRef.current.write(encodeCommand(cmdStr));

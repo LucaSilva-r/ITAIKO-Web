@@ -3,21 +3,16 @@ import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { PadConfigGroup } from "./PadConfigGroup";
 import { TimingSettings } from "./TimingSettings";
 import { ADCChannelSettings } from "./ADCChannelSettings";
-import { KeyMappingSettings } from "./KeyMappingSettings";
-import { ConfigActions } from "./ConfigActions";
+import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
+import { RotateCcw } from "lucide-react";
 
-// Pre-computed dim colors (30% brightness) for visual drum
-const DIM_COLORS = {
-  kaLeft: "rgb(32, 56, 59)",
-  donLeft: "rgb(76, 19, 10)",
-  donRight: "rgb(76, 19, 10)",
-  kaRight: "rgb(32, 56, 59)",
-};
+
 
 export function ConfigurationTab() {
   const {
@@ -29,6 +24,7 @@ export function ConfigurationTab() {
     startStreaming,
     saveToFlash,
     configDirty,
+    resetPadThresholds,
   } = useDevice();
   const [advancedMode, setAdvancedMode] = useState(false);
   const isFirstRender = useRef(true);
@@ -75,32 +71,91 @@ export function ConfigurationTab() {
 
       {/* Visual Drum */}
       <div className="flex flex-col items-center py-4">
-        <div className="relative w-64 h-64">
-          <svg viewBox="0 0 200 200" className="w-full h-full">
-            {/* Ka Left - left half of outer ring */}
-            <path
-              d="M 100 10 A 90 90 0 0 0 100 190 L 100 170 A 70 70 0 0 1 100 30 Z"
-              fill={triggers.kaLeft ? PAD_COLORS.kaLeft : DIM_COLORS.kaLeft}
-            />
-            {/* Ka Right - right half of outer ring */}
-            <path
-              d="M 100 10 A 90 90 0 0 1 100 190 L 100 170 A 70 70 0 0 0 100 30 Z"
-              fill={triggers.kaRight ? PAD_COLORS.kaRight : DIM_COLORS.kaRight}
-            />
-            {/* Don Left - left half of inner circle */}
-            <path
-              d="M 100 30 A 70 70 0 0 0 100 170 L 100 100 Z"
-              fill={triggers.donLeft ? PAD_COLORS.donLeft : DIM_COLORS.donLeft}
-            />
-            {/* Don Right - right half of inner circle */}
-            <path
-              d="M 100 30 A 70 70 0 0 1 100 170 L 100 100 Z"
-              fill={triggers.donRight ? PAD_COLORS.donRight : DIM_COLORS.donRight}
-            />
-            {/* Center dividing line */}
-            <line x1="100" y1="10" x2="100" y2="190" stroke="black" strokeWidth="2" />
-          </svg>
-        </div>
+        {/* Drum Container */}
+        <div className="relative w-144 h-144">
+          {/* Background Image */}
+                        <img
+                          src="/visual_drum.png"
+                          alt="Visual Drum Background"
+                          className="absolute inset-0 w-full h-full object-contain translate-x-[2px]"
+                        />
+                                                                                              {/* Drum SVG Overlay */}
+
+                                                                                              <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full">
+
+                                                                                                {/* Ka Left - left half of outer ring */}
+
+                                                                                                <path
+
+                                                                                                  d="M 100 23 A 63 63 0 0 0 100 149 L 100 135 A 49 49 0 0 1 100 37 Z"
+
+                                                                                                  fill={PAD_COLORS.kaLeft}
+
+                                                                                                  style={{
+
+                                                                                                    opacity: triggers.kaLeft ? 0.6 : 0,
+
+                                                                                                    transition: triggers.kaLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+
+                                                                                                  }}
+
+                                                                                                />
+
+                                                                                                {/* Ka Right - right half of outer ring */}
+
+                                                                                                <path
+
+                                                                                                  d="M 100 23 A 63 63 0 0 1 100 149 L 100 135 A 49 49 0 0 0 100 37 Z"
+
+                                                                                                  fill={PAD_COLORS.kaRight}
+
+                                                                                                  style={{
+
+                                                                                                    opacity: triggers.kaRight ? 0.6 : 0,
+
+                                                                                                    transition: triggers.kaRight ? "opacity 0ms" : "opacity 200ms ease-out",
+
+                                                                                                  }}
+
+                                                                                                />
+
+                                                                                                {/* Don Left - left half of inner circle */}
+
+                                                                                                <path
+
+                                                                                                  d="M 100 37 A 49 49 0 0 0 100 135 L 100 86 Z"
+
+                                                                                                  fill={PAD_COLORS.donLeft}
+
+                                                                                                  style={{
+
+                                                                                                    opacity: triggers.donLeft ? 0.6 : 0,
+
+                                                                                                    transition: triggers.donLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+
+                                                                                                  }}
+
+                                                                                                />
+
+                                                                                                {/* Don Right - right half of inner circle */}
+
+                                                                                                <path
+
+                                                                                                  d="M 100 37 A 49 49 0 0 1 100 135 L 100 86 Z"
+
+                                                                                                  fill={PAD_COLORS.donRight}
+
+                                                                                                  style={{
+
+                                                                                                    opacity: triggers.donRight ? 0.6 : 0,
+
+                                                                                                    transition: triggers.donRight ? "opacity 0ms" : "opacity 200ms ease-out",
+
+                                                                                                  }}
+
+                                                                                                />
+
+                                                                                              </svg>        </div>
         {!isConnected && (
           <p className="text-sm text-muted-foreground mt-2">
             Connect the drum to see pad activity
@@ -138,10 +193,21 @@ export function ConfigurationTab() {
 
       {/* Pad Configuration Grid */}
       <div>
-        <h3 className="font-medium mb-3 flex items-center gap-2">
-          Pad Thresholds
-          <HelpButton helpKey="pad-thresholds" />
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium flex items-center gap-2">
+            Pad Thresholds
+            <HelpButton helpKey="pad-thresholds" />
+          </h3>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={resetPadThresholds}
+            disabled={!isConnected}
+            title="Reset pad thresholds to defaults"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {PAD_NAMES.map((pad) => (
             <PadConfigGroup key={pad} pad={pad} simpleMode={!advancedMode} />
@@ -159,31 +225,28 @@ export function ConfigurationTab() {
           <ADCChannelSettings />
 
           {/* Key Mappings */}
-          <KeyMappingSettings />
+          <InteractiveKeyMapping />
         </>
       )}
 
-      {/* Config Actions & Mode Toggle */}
-      <div className="flex items-center justify-between gap-4">
-        <ConfigActions />
-        <Card className="flex-1">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="advanced-mode">Advanced Mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show all configuration options
-                </p>
-              </div>
-              <Switch
-                id="advanced-mode"
-                checked={advancedMode}
-                onCheckedChange={setAdvancedMode}
-              />
+      {/* Mode Toggle */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="advanced-mode">Advanced Mode</Label>
+              <p className="text-sm text-muted-foreground">
+                Show all configuration options
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Switch
+              id="advanced-mode"
+              checked={advancedMode}
+              onCheckedChange={setAdvancedMode}
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

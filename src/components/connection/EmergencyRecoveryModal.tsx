@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2, CheckCircle2, Skull, Download } from "lucide-react";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 type RecoveryStatus =
   | 'idle'
@@ -343,10 +344,21 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
               </div>
 
               {!isConnected && (
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-md space-y-3">
+                  <p className="text-sm text-blue-800 text-center">
                     <strong>Device not connected:</strong> Make sure your device is already in bootloader mode
                     (RPI-RP2 drive should be visible) before proceeding.
+                  </p>
+                  <div className="flex justify-center">
+                    <DotLottieReact
+                      src="/lottie/enter_bootsel.lottie"
+                      loop
+                      autoplay
+                      style={{ width: 192, height: 192 }}
+                    />
+                  </div>
+                  <p className="text-xs text-blue-700 text-center">
+                    Hold 1 then hold 2. Once the controller disconnects, release 1 then 2. A RPI-RP2 drive should appear on your computer.
                   </p>
                 </div>
               )}

@@ -36,6 +36,10 @@ interface DeviceContextValue {
   writeToDevice: () => Promise<boolean>;
   saveToFlash: () => Promise<boolean>;
   resetToDefaults: () => void;
+  resetPadThresholds: () => void;
+  resetTiming: () => void;
+  resetKeyMappings: () => void;
+  resetADCChannels: () => void;
   updatePadThreshold: (pad: PadName, field: keyof PadThresholds, value: number) => void;
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
@@ -180,6 +184,10 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       writeToDevice: deviceConfig.writeToDevice,
       saveToFlash: deviceConfig.saveToFlash,
       resetToDefaults: deviceConfig.resetToDefaults,
+      resetPadThresholds: deviceConfig.resetPadThresholds,
+      resetTiming: deviceConfig.resetTiming,
+      resetKeyMappings: deviceConfig.resetKeyMappings,
+      resetADCChannels: deviceConfig.resetADCChannels,
       updatePadThreshold: deviceConfig.updatePadThreshold,
       updateTiming: deviceConfig.updateTiming,
       setDoubleInputMode: deviceConfig.setDoubleInputMode,

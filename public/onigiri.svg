@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 1263 982" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <path id="Reserved" d="M498.144,62.323L184.077,416.501C43.126,578.069 116.531,886.172 404.614,899.499C491.939,896.557 825.513,898.24 825.513,898.24C1116.791,893.744 1184.384,563.858 1044.118,416.732L728.028,62.718C700.53,44.842 675.116,67.516 674.214,87.098L674.863,117.465C674.863,117.465 675.944,126.653 665.906,126.576C655.869,126.499 560.826,126.49 560.826,126.49C560.826,126.49 552.641,126.799 551.869,117.534C551.097,108.268 551.311,89.653 551.311,89.653C549.904,49.187 509.784,52.097 498.144,62.323Z" style="fill:white;stroke:black;stroke-width:10.45px;"/>
+    <path id="Reserved1" serif:id="Reserved" d="M459.165,914.419L459.165,599.836C459.165,590.395 466.83,582.73 476.271,582.73L743.176,582.73C752.617,582.73 760.282,590.395 760.282,599.836L760.282,914.419L459.165,914.419Z" style="stroke:black;stroke-width:4.08px;"/>
+    <circle id="Reserved2" serif:id="Reserved" cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    <g id="North" transform="matrix(1.400295,0,0,1.400295,-179.994443,-102.199249)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:2.91px;"/>
+    </g>
+    <g id="East" transform="matrix(1.400295,0,0,1.400295,-94.8533,-17.633453)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:2.91px;"/>
+    </g>
+    <g id="South" transform="matrix(1.400295,0,0,1.400295,-179.994443,68.658175)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:2.91px;"/>
+    </g>
+    <g id="West" transform="matrix(1.400295,0,0,1.400295,-266.286071,-17.633453)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:2.91px;"/>
+    </g>
+    <rect id="Left" x="220.455" y="634.204" width="64.431" height="69.033" style="fill:white;"/>
+    <rect id="Up" x="284.886" y="569.773" width="69.033" height="64.431" style="fill:white;"/>
+    <rect id="Right" x="353.919" y="634.204" width="64.431" height="69.033" style="fill:white;"/>
+    <rect id="Down" x="284.886" y="703.237" width="69.033" height="64.431" style="fill:white;"/>
+    <path id="Reserved3" serif:id="Reserved" d="M284.886,703.237L220.455,703.237L220.455,634.204L284.886,634.204L284.886,569.773L353.919,569.773L353.919,634.204L418.351,634.204L418.351,703.237L353.919,703.237L353.919,767.668L284.886,767.668L284.886,703.237Z" style="fill:none;stroke:black;stroke-width:4.08px;"/>
+    <g id="Escape" transform="matrix(1,0,0,1,70.183893,-40.269418)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    </g>
+    <g id="R--Right-Shoulder-" serif:id="R (Right Shoulder)" transform="matrix(1,0,0,1,140.943028,-78.23776)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    </g>
+    <g id="L--Left-Shoulder-" serif:id="L (Left Shoulder)" transform="matrix(1,0,0,1,-468.237858,-82.409384)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    </g>
+    <g id="Tab" transform="matrix(1,0,0,1,-398.669635,-41.085454)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    </g>
+    <g id="Reserved4" serif:id="Reserved" transform="matrix(1,0,0,1,-330.822513,1.870549)">
+        <circle cx="774.447" cy="491" r="27.305" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    </g>
+    <rect id="Reserved5" serif:id="Reserved" x="549.514" y="254.52" width="40.269" height="51.775" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    <g id="Reserved6" serif:id="Reserved" transform="matrix(1,0,0,1,81.986151,0)">
+        <rect x="549.514" y="254.52" width="40.269" height="51.775" style="fill:white;stroke:black;stroke-width:4.08px;"/>
+    </g>
+    <rect id="Reserved7" serif:id="Reserved" x="495.571" y="647.874" width="231.426" height="122.361" style="stroke:black;stroke-width:4.08px;"/>
+    <g id="Reserved8" serif:id="Reserved" transform="matrix(1,0,0,1,3.260506,0)">
+        <rect x="495.571" y="647.874" width="231.426" height="122.361" style="fill:rgb(40,40,40);stroke:black;stroke-width:4.08px;"/>
+    </g>
+</svg>
