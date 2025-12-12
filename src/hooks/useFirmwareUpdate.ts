@@ -1,23 +1,17 @@
 import { useState, useCallback, useEffect } from 'react';
 import { compareVersions } from '../lib/utils';
 
-export interface GithubRelease {
-  tag_name: string;
-  html_url: string;
-  name: string;
-  body: string;
-  assets: Array<{
-    browser_download_url: string;
-    name: string;
-    url: string; // API URL for the asset
-  }>;
+export interface FirmwareInfo {
+  version: string;
+  firmwareUrl: string;
+  firmwareName: string;
 }
 
 export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'rebooting' | 'waiting_for_device' | 'flashing' | 'writing' | 'complete' | 'error' | 'manual_action_required';
 
 export function useFirmwareUpdate(currentVersion?: string) {
   const [status, setStatus] = useState<UpdateStatus>('idle');
-  const [latestRelease, setLatestRelease] = useState<GithubRelease | null>(null);
+  const [latestFirmware, setLatestFirmware] = useState<FirmwareInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
 
@@ -25,7 +19,7 @@ export function useFirmwareUpdate(currentVersion?: string) {
     // Reset state if currentVersion is undefined or empty
     if (!currentVersion) {
       setStatus('idle');
-      setLatestRelease(null);
+      setLatestFirmware(null);
       return;
     }
 
@@ -33,16 +27,20 @@ export function useFirmwareUpdate(currentVersion?: string) {
     setError(null);
 
     try {
-      const response = await fetch('https://api.github.com/repos/LucaSilva-r/ITAIKO/releases/latest');
+      // Fetch version from local firmware folder
+      const response = await fetch('/firmware/version.txt');
       if (!response.ok) {
-        throw new Error('Failed to fetch latest release');
+        throw new Error('Failed to fetch firmware version');
       }
-      const data: GithubRelease = await response.json();
-      const latestVersion = data.tag_name;
+      const latestVersion = (await response.text()).trim();
 
       if (compareVersions(latestVersion, currentVersion) > 0) {
         setStatus('available');
-        setLatestRelease(data);
+        setLatestFirmware({
+          version: latestVersion,
+          firmwareUrl: '/firmware/ITAIKO.uf2',
+          firmwareName: 'ITAIKO.uf2',
+        });
       } else {
         setStatus('idle');
       }
@@ -61,35 +59,19 @@ export function useFirmwareUpdate(currentVersion?: string) {
   }, [currentVersion, checkUpdate]);
 
   const installUpdate = useCallback(async (rebootCallback: () => Promise<void>) => {
-    if (!latestRelease) return;
-
-    const asset = latestRelease.assets.find(a => a.name.endsWith('.uf2'));
-    if (!asset) {
-      setError('No firmware (.uf2) found in the release');
-      return;
-    }
+    if (!latestFirmware) return;
 
     let blob: Blob | null = null;
 
     try {
-      // 1. Download
+      // 1. Download from local firmware folder
       setStatus('downloading');
       setProgress(0);
-      
-      try {
-        // Use CORS proxy to avoid CORS errors with GitHub releases
-        const proxyUrl = `https://api.cors.lol/?url=${encodeURIComponent(asset.browser_download_url)}`;
-        const response = await fetch(proxyUrl);
-        
-        if (!response.ok) throw new Error(`Download failed: ${response.status} ${response.statusText}`);
-        blob = await response.blob();
-        setProgress(30);
-      } catch (downloadErr) {
-        console.warn('Automatic download via proxy failed, falling back to manual:', downloadErr);
-        // Fallback: Continue flow but warn user they might need to drag-and-drop
-        // actually, if we don't have the blob, we can't write it.
-        // We will switch to a manual mode.
-      }
+
+      const response = await fetch(latestFirmware.firmwareUrl);
+      if (!response.ok) throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      blob = await response.blob();
+      setProgress(30);
 
       // 2. Reboot
       setStatus('rebooting');
@@ -104,47 +86,38 @@ export function useFirmwareUpdate(currentVersion?: string) {
       // We wait a fixed time to ensure the device has completed the reboot
       await new Promise(resolve => setTimeout(resolve, 3000));
 
-      if (blob) {
-        // 4a. Flash (Save File via File System Access API)
-        setStatus('flashing');
-        
-        // @ts-expect-error - showSaveFilePicker is not in standard types yet
-        const handle = await window.showSaveFilePicker({
-          suggestedName: asset.name,
-          types: [{
-            description: 'UF2 Firmware',
-            accept: { 'application/x-uf2': ['.uf2'] },
-          }],
-        });
+      // 4. Flash (Save File via File System Access API)
+      setStatus('flashing');
 
-        // 5. Write to device
-        setStatus('writing');
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
+      // @ts-expect-error - showSaveFilePicker is not in standard types yet
+      const handle = await window.showSaveFilePicker({
+        suggestedName: latestFirmware.firmwareName,
+        types: [{
+          description: 'UF2 Firmware',
+          accept: { 'application/x-uf2': ['.uf2'] },
+        }],
+      });
 
-        setProgress(100);
-        setStatus('complete');
-      } else {
-        // 4b. Manual Fallback
-        setStatus('manual_action_required');
-        window.open(asset.browser_download_url, '_blank');
-      }
-      
+      // 5. Write to device
+      setStatus('writing');
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+
+      setProgress(100);
+      setStatus('complete');
+
     } catch (err) {
       console.error('Update failed:', err);
-      // If we are in manual mode, don't override the status
-      if (status !== 'manual_action_required') {
-        setError(err instanceof Error ? err.message : 'Update failed');
-        setStatus('error');
-      }
+      setError(err instanceof Error ? err.message : 'Update failed');
+      setStatus('error');
     }
-  }, [latestRelease, status]);
+  }, [latestFirmware]);
 
   return {
     isUpdateAvailable: status === 'available',
     status,
-    latestRelease,
+    latestFirmware,
     error,
     progress,
     checkUpdate,
