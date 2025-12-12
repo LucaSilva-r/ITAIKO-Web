@@ -37,7 +37,7 @@ function ConfigurePageContent() {
       <div className={`flex-1 relative ${isReady ? 'overflow-auto' : 'overflow-hidden'}`}>
         {/* Blur overlay when not connected/ready */}
         {!isReady && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+          <div className="fixed inset-0 top-14 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
             <div className="text-center space-y-2">
               <p className="text-xl font-medium text-foreground">Connect your drum</p>
               <p className="text-sm text-muted-foreground">Configuration will appear once connected</p>

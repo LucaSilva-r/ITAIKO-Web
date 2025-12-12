@@ -88,88 +88,89 @@ export function ConfigurationTab() {
         {/* Drum Container */}
         <div className="relative w-144 h-144">
           {/* Background Image */}
-                        <img
-                          src="/visual_drum.png"
-                          alt="Visual Drum Background"
-                          className="absolute inset-0 w-full h-full object-contain translate-x-[2px]"
-                        />
-                                                                                              {/* Drum SVG Overlay */}
+          <img
+            src="/visual_drum.png"
+            alt="Visual Drum Background"
+            className="absolute inset-0 w-full h-full object-contain translate-x-[2px]"
+          />
+          {/* Drum SVG Overlay */}
 
-                                                                                              <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full">
+          <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full">
 
-                                                                                                {/* Ka Left - left half of outer ring */}
+            {/* Ka Left - left half of outer ring */}
 
-                                                                                                <path
+            <path
 
-                                                                                                  d="M 100 23 A 63 63 0 0 0 100 149 L 100 135 A 49 49 0 0 1 100 37 Z"
+              d="M 100 23 A 63 63 0 0 0 100 149 L 100 135 A 49 49 0 0 1 100 37 Z"
 
-                                                                                                  fill={PAD_COLORS.kaLeft}
+              fill={PAD_COLORS.kaLeft}
 
-                                                                                                  style={{
+              style={{
 
-                                                                                                    opacity: triggers.kaLeft ? 0.6 : 0,
+                opacity: triggers.kaLeft ? 0.6 : 0,
 
-                                                                                                    transition: triggers.kaLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.kaLeft ? "opacity 0ms" : "opacity 200ms ease-out",
 
-                                                                                                  }}
+              }}
 
-                                                                                                />
+            />
 
-                                                                                                {/* Ka Right - right half of outer ring */}
+            {/* Ka Right - right half of outer ring */}
 
-                                                                                                <path
+            <path
 
-                                                                                                  d="M 100 23 A 63 63 0 0 1 100 149 L 100 135 A 49 49 0 0 0 100 37 Z"
+              d="M 100 23 A 63 63 0 0 1 100 149 L 100 135 A 49 49 0 0 0 100 37 Z"
 
-                                                                                                  fill={PAD_COLORS.kaRight}
+              fill={PAD_COLORS.kaRight}
 
-                                                                                                  style={{
+              style={{
 
-                                                                                                    opacity: triggers.kaRight ? 0.6 : 0,
+                opacity: triggers.kaRight ? 0.6 : 0,
 
-                                                                                                    transition: triggers.kaRight ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.kaRight ? "opacity 0ms" : "opacity 200ms ease-out",
 
-                                                                                                  }}
+              }}
 
-                                                                                                />
+            />
 
-                                                                                                {/* Don Left - left half of inner circle */}
+            {/* Don Left - left half of inner circle */}
 
-                                                                                                <path
+            <path
 
-                                                                                                  d="M 100 37 A 49 49 0 0 0 100 135 L 100 86 Z"
+              d="M 100 37 A 49 49 0 0 0 100 135 L 100 86 Z"
 
-                                                                                                  fill={PAD_COLORS.donLeft}
+              fill={PAD_COLORS.donLeft}
 
-                                                                                                  style={{
+              style={{
 
-                                                                                                    opacity: triggers.donLeft ? 0.6 : 0,
+                opacity: triggers.donLeft ? 0.6 : 0,
 
-                                                                                                    transition: triggers.donLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.donLeft ? "opacity 0ms" : "opacity 200ms ease-out",
 
-                                                                                                  }}
+              }}
 
-                                                                                                />
+            />
 
-                                                                                                {/* Don Right - right half of inner circle */}
+            {/* Don Right - right half of inner circle */}
 
-                                                                                                <path
+            <path
 
-                                                                                                  d="M 100 37 A 49 49 0 0 1 100 135 L 100 86 Z"
+              d="M 100 37 A 49 49 0 0 1 100 135 L 100 86 Z"
 
-                                                                                                  fill={PAD_COLORS.donRight}
+              fill={PAD_COLORS.donRight}
 
-                                                                                                  style={{
+              style={{
 
-                                                                                                    opacity: triggers.donRight ? 0.6 : 0,
+                opacity: triggers.donRight ? 0.6 : 0,
 
-                                                                                                    transition: triggers.donRight ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.donRight ? "opacity 0ms" : "opacity 200ms ease-out",
 
-                                                                                                  }}
+              }}
 
-                                                                                                />
+            />
 
-                                                                                              </svg>        </div>
+          </svg>
+        </div>
       </div>
 
       {/* Global Settings - Advanced only */}
