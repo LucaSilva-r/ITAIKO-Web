@@ -10,7 +10,7 @@ import { ADCChannelSettings } from "./ADCChannelSettings";
 import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Download, Upload } from "lucide-react";
 
 
 
@@ -25,8 +25,24 @@ export function ConfigurationTab() {
     saveToFlash,
     configDirty,
     resetPadThresholds,
+    exportConfig,
+    importConfig,
   } = useDevice();
   const [advancedMode, setAdvancedMode] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await importConfig(file);
+      // Reset input so the same file can be selected again
+      e.target.value = "";
+    }
+  };
   const isFirstRender = useRef(true);
 
   // Use ref to always have latest function without causing effect re-runs
@@ -228,6 +244,43 @@ export function ConfigurationTab() {
           <InteractiveKeyMapping />
         </>
       )}
+
+      {/* Import/Export Config */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Backup & Restore</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".json"
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={handleImportClick}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Import Config
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={exportConfig}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Config
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Export your current configuration to a JSON file, or import a previously saved config.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Mode Toggle */}
       <Card>

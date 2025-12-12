@@ -31,6 +31,10 @@ interface UseDeviceConfigReturn {
   resetKeyMappings: () => void;
   resetADCChannels: () => void;
 
+  // Import/Export
+  exportConfig: () => void;
+  importConfig: (file: File) => Promise<boolean>;
+
   // Update helpers
   updatePadThreshold: (
     pad: PadName,
@@ -155,6 +159,57 @@ export function useDeviceConfig({
     }));
   }, []);
 
+  const exportConfig = useCallback((): void => {
+    // Create a clean config object without firmwareVersion (device-specific)
+    const exportData = {
+      pads: config.pads,
+      doubleInputMode: config.doubleInputMode,
+      timing: config.timing,
+      keyMappings: config.keyMappings,
+      adcChannels: config.adcChannels,
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `itaiko-config-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [config]);
+
+  const importConfig = useCallback(async (file: File): Promise<boolean> => {
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+
+      // Validate the imported config has required fields
+      if (!imported.pads || !imported.timing) {
+        console.error("Invalid config file: missing required fields");
+        return false;
+      }
+
+      // Merge with current config, preserving firmwareVersion
+      setConfig((prev) => ({
+        ...prev,
+        pads: imported.pads ?? prev.pads,
+        doubleInputMode: imported.doubleInputMode ?? prev.doubleInputMode,
+        timing: imported.timing ?? prev.timing,
+        keyMappings: imported.keyMappings ?? prev.keyMappings,
+        adcChannels: imported.adcChannels ?? prev.adcChannels,
+      }));
+
+      return true;
+    } catch (err) {
+      console.error("Failed to import config:", err);
+      return false;
+    }
+  }, []);
+
   const updatePadThreshold = useCallback(
     (pad: PadName, field: keyof PadThresholds, value: number): void => {
       setConfig((prev) => ({
@@ -240,6 +295,8 @@ export function useDeviceConfig({
     resetTiming,
     resetKeyMappings,
     resetADCChannels,
+    exportConfig,
+    importConfig,
     updatePadThreshold,
     updateTiming,
     setDoubleInputMode,
