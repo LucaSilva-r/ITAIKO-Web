@@ -25,6 +25,12 @@ interface UseDeviceConfigReturn {
   saveToFlash: () => Promise<boolean>;
   resetToDefaults: () => void;
 
+  // Section-specific resets
+  resetPadThresholds: () => void;
+  resetTiming: () => void;
+  resetKeyMappings: () => void;
+  resetADCChannels: () => void;
+
   // Update helpers
   updatePadThreshold: (
     pad: PadName,
@@ -121,6 +127,34 @@ export function useDeviceConfig({
     setConfig(DEFAULT_DEVICE_CONFIG);
   }, []);
 
+  const resetPadThresholds = useCallback((): void => {
+    setConfig((prev) => ({
+      ...prev,
+      pads: DEFAULT_DEVICE_CONFIG.pads,
+    }));
+  }, []);
+
+  const resetTiming = useCallback((): void => {
+    setConfig((prev) => ({
+      ...prev,
+      timing: DEFAULT_DEVICE_CONFIG.timing,
+    }));
+  }, []);
+
+  const resetKeyMappings = useCallback((): void => {
+    setConfig((prev) => ({
+      ...prev,
+      keyMappings: DEFAULT_DEVICE_CONFIG.keyMappings,
+    }));
+  }, []);
+
+  const resetADCChannels = useCallback((): void => {
+    setConfig((prev) => ({
+      ...prev,
+      adcChannels: DEFAULT_DEVICE_CONFIG.adcChannels,
+    }));
+  }, []);
+
   const updatePadThreshold = useCallback(
     (pad: PadName, field: keyof PadThresholds, value: number): void => {
       setConfig((prev) => ({
@@ -202,6 +236,10 @@ export function useDeviceConfig({
     writeToDevice,
     saveToFlash,
     resetToDefaults,
+    resetPadThresholds,
+    resetTiming,
+    resetKeyMappings,
+    resetADCChannels,
     updatePadThreshold,
     updateTiming,
     setDoubleInputMode,

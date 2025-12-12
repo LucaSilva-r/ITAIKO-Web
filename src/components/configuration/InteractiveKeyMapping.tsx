@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { KeyMappings } from "@/types";
 import { hidToKeyName, browserKeyToHid } from "@/lib/hid-keycodes";
 import { HelpButton } from "@/components/ui/help-modal";
+import { RotateCcw } from "lucide-react";
 
 // Map SVG button IDs to KeyMappings structure
 const BUTTON_MAPPINGS: Record<string, { category: keyof KeyMappings; key: string }> = {
@@ -29,7 +31,7 @@ const BUTTON_MAPPINGS: Record<string, { category: keyof KeyMappings; key: string
 };
 
 export function InteractiveKeyMapping() {
-  const { config, updateKeyMapping, isConnected } = useDevice();
+  const { config, updateKeyMapping, isConnected, resetKeyMappings } = useDevice();
   const keyMappings = config.keyMappings;
   // We use this state only to signal that SVG is injected and ready for manipulation
   const [svgLoaded, setSvgLoaded] = useState(false);
@@ -261,10 +263,21 @@ export function InteractiveKeyMapping() {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-medium flex items-center gap-2">
-        Key Mappings
-        <HelpButton helpKey="key-mappings" />
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium flex items-center gap-2">
+          Key Mappings
+          <HelpButton helpKey="key-mappings" />
+        </h3>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={resetKeyMappings}
+          disabled={!isConnected}
+          title="Reset key mappings to defaults"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
+      </div>
 
       {isListening && selectedButton && (
         <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">

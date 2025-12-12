@@ -3,13 +3,14 @@ import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { PadConfigGroup } from "./PadConfigGroup";
 import { TimingSettings } from "./TimingSettings";
 import { ADCChannelSettings } from "./ADCChannelSettings";
 import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
-import { ConfigActions } from "./ConfigActions";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
+import { RotateCcw } from "lucide-react";
 
 
 
@@ -23,6 +24,7 @@ export function ConfigurationTab() {
     startStreaming,
     saveToFlash,
     configDirty,
+    resetPadThresholds,
   } = useDevice();
   const [advancedMode, setAdvancedMode] = useState(false);
   const isFirstRender = useRef(true);
@@ -191,10 +193,21 @@ export function ConfigurationTab() {
 
       {/* Pad Configuration Grid */}
       <div>
-        <h3 className="font-medium mb-3 flex items-center gap-2">
-          Pad Thresholds
-          <HelpButton helpKey="pad-thresholds" />
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium flex items-center gap-2">
+            Pad Thresholds
+            <HelpButton helpKey="pad-thresholds" />
+          </h3>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={resetPadThresholds}
+            disabled={!isConnected}
+            title="Reset pad thresholds to defaults"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {PAD_NAMES.map((pad) => (
             <PadConfigGroup key={pad} pad={pad} simpleMode={!advancedMode} />
@@ -216,27 +229,24 @@ export function ConfigurationTab() {
         </>
       )}
 
-      {/* Config Actions & Mode Toggle */}
-      <div className="flex items-center justify-between gap-4">
-        <ConfigActions />
-        <Card className="flex-1">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="advanced-mode">Advanced Mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Show all configuration options
-                </p>
-              </div>
-              <Switch
-                id="advanced-mode"
-                checked={advancedMode}
-                onCheckedChange={setAdvancedMode}
-              />
+      {/* Mode Toggle */}
+      <Card>
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="advanced-mode">Advanced Mode</Label>
+              <p className="text-sm text-muted-foreground">
+                Show all configuration options
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Switch
+              id="advanced-mode"
+              checked={advancedMode}
+              onCheckedChange={setAdvancedMode}
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

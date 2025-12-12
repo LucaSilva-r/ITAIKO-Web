@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { TimingConfig } from "@/types";
 import { TIMING_MIN, TIMING_MAX } from "@/lib/default-config";
 import { HelpButton } from "@/components/ui/help-modal";
+import { RotateCcw } from "lucide-react";
 
 interface TimingSettingProps {
   label: string;
@@ -64,16 +66,27 @@ function TimingSetting({
 }
 
 export function TimingSettings() {
-  const { config, updateTiming, isConnected } = useDevice();
+  const { config, updateTiming, isConnected, resetTiming } = useDevice();
   const timing = config.timing;
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          Timing Settings
-          <HelpButton helpKey="timing-settings" />
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            Timing Settings
+            <HelpButton helpKey="timing-settings" />
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={resetTiming}
+            disabled={!isConnected}
+            title="Reset timing to defaults"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <TimingSetting
