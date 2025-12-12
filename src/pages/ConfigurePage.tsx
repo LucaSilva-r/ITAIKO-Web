@@ -34,16 +34,7 @@ function ConfigurePageContent() {
       </header>
 
       {/* Main Content - scrollable area (overflow hidden when overlay shown) */}
-      <div className={`flex-1 relative ${isReady ? 'overflow-auto' : 'overflow-hidden'}`}>
-        {/* Blur overlay when not connected/ready */}
-        {!isReady && (
-          <div className="fixed inset-0 top-14 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-            <div className="text-center space-y-2">
-              <p className="text-xl font-medium text-foreground">Connect your drum</p>
-              <p className="text-sm text-muted-foreground">Configuration will appear once connected</p>
-            </div>
-          </div>
-        )}
+      <div className="flex-1 relative overflow-auto">
 
         <main className="px-4 w-full max-w-5xl mx-auto py-6">
           <Tabs
