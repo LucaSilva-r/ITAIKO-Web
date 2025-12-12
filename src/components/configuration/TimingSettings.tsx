@@ -58,7 +58,7 @@ function TimingSetting({
         onValueChange={handleSliderChange}
         min={TIMING_MIN}
         max={TIMING_MAX}
-        step={1}
+        step={5}
         disabled={disabled}
       />
     </div>
@@ -71,7 +71,7 @@ export function TimingSettings() {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             Timing Settings

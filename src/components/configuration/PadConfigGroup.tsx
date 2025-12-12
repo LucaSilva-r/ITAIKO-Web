@@ -37,7 +37,7 @@ export function PadConfigGroup({ pad, simpleMode = false }: PadConfigGroupProps)
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <div
             className="w-3 h-3 rounded-full"

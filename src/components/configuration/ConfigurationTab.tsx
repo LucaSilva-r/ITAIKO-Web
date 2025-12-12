@@ -185,7 +185,7 @@ export function ConfigurationTab() {
         {/* Global Settings - Advanced only */}
         {advancedMode && (
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 Global Settings
                 <HelpButton helpKey="global-settings" />
@@ -250,7 +250,7 @@ export function ConfigurationTab() {
 
         {/* Import/Export Config */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="text-base">Backup & Restore</CardTitle>
           </CardHeader>
           <CardContent>
@@ -301,7 +301,7 @@ export function ConfigurationTab() {
 
       {/* Mode Toggle - Always accessible */}
       <Card>
-        <CardContent className="py-4">
+        <CardContent >
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label htmlFor="advanced-mode">Advanced Mode</Label>

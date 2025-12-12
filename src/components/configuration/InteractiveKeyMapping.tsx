@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDevice } from "@/context/DeviceContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { KeyMappings } from "@/types";
 import { hidToKeyName, browserKeyToHid } from "@/lib/hid-keycodes";
@@ -43,7 +43,7 @@ export function InteractiveKeyMapping() {
   // Fetch and insert SVG manually to avoid React reconciliation issues
   useEffect(() => {
     if (!svgContainerRef.current) return;
-    
+
     // If we already have content, don't re-fetch
     if (svgContainerRef.current.querySelector("svg")) {
       setSvgLoaded(true);
@@ -57,7 +57,7 @@ export function InteractiveKeyMapping() {
           // Manually inject HTML. React will leave this alone as long as we don't
           // render children in JSX.
           svgContainerRef.current.innerHTML = content;
-          
+
           // Make SVG responsive
           const svg = svgContainerRef.current.querySelector("svg");
           if (svg) {
@@ -67,7 +67,7 @@ export function InteractiveKeyMapping() {
             svg.style.height = "auto";
             svg.style.maxHeight = "600px"; // Prevent it from becoming too tall
           }
-          
+
           setSvgLoaded(true);
         }
       })
@@ -99,14 +99,14 @@ export function InteractiveKeyMapping() {
       const element = svg.querySelector(`[id="${buttonId}"]`);
       if (element) {
         const handler = () => handleButtonClick(buttonId);
-        
+
         element.addEventListener("click", handler);
         element.setAttribute("style", "cursor: pointer; transition: opacity 0.2s;");
 
         // Hover effects
         const mouseEnter = () => { (element as SVGElement).style.opacity = "0.8"; };
         const mouseLeave = () => { (element as SVGElement).style.opacity = "1"; };
-        
+
         element.addEventListener("mouseenter", mouseEnter);
         element.addEventListener("mouseleave", mouseLeave);
 
@@ -216,7 +216,7 @@ export function InteractiveKeyMapping() {
         try {
           // Get BBox in local element coordinates
           const bbox = element.getBBox();
-          
+
           // Calculate center in local coordinates
           const centerX = bbox.x + bbox.width / 2;
           const centerY = bbox.y + bbox.height / 2;
@@ -227,10 +227,10 @@ export function InteractiveKeyMapping() {
           const pt = (svg as SVGSVGElement).createSVGPoint();
           pt.x = centerX;
           pt.y = centerY;
-          
+
           const elemScreenCTM = element.getScreenCTM();
           const svgScreenCTM = (svg as SVGSVGElement).getScreenCTM();
-          
+
           let globalPt = pt;
           if (elemScreenCTM && svgScreenCTM) {
             globalPt = pt.matrixTransform(elemScreenCTM).matrixTransform(svgScreenCTM.inverse());
@@ -243,9 +243,9 @@ export function InteractiveKeyMapping() {
           textElement.setAttribute("text-anchor", "middle");
           textElement.setAttribute("dominant-baseline", "middle");
           textElement.setAttribute("fill", "white");
-          textElement.setAttribute("font-size", "24"); 
+          textElement.setAttribute("font-size", "24");
           textElement.setAttribute("font-weight", "bold");
-          textElement.setAttribute("pointer-events", "none"); 
+          textElement.setAttribute("pointer-events", "none");
           textElement.setAttribute("class", "key-mapping-label");
           textElement.style.textShadow = "0px 1px 2px rgba(0,0,0,0.5)";
 
@@ -288,12 +288,13 @@ export function InteractiveKeyMapping() {
       )}
 
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader>
           <CardTitle className="text-base">Controller Board</CardTitle>
+          <CardDescription>            Click any green button on the board and press a key to assign it.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Click any green button on the board and press a key to assign it.
           </p>
 
           <div className="flex justify-center w-full">
@@ -319,7 +320,7 @@ export function InteractiveKeyMapping() {
               <span>Listening...</span>
             </div>
           </div>
-          
+
         </CardContent>
       </Card>
     </div>
