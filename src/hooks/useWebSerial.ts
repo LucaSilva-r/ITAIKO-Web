@@ -14,8 +14,10 @@ interface UseWebSerialReturn {
   connect: () => Promise<boolean>;
   disconnect: () => Promise<void>;
   sendCommand: (command: DeviceCommand, data?: string) => Promise<void>;
+  sendBinary: (data: Uint8Array) => Promise<void>;
   readLine: () => Promise<string | null>;
   readUntilTimeout: (timeoutMs?: number) => Promise<string>;
+  clearBuffer: () => void;
   startReading: (onData: (line: string) => void) => void;
   stopReading: () => void;
   isReading: boolean;
@@ -321,16 +323,25 @@ export function useWebSerial(): UseWebSerialReturn {
       await writerRef.current.write(encodeCommand(cmdStr));
     }, []);
 
+  const sendBinary = useCallback(async (data: Uint8Array): Promise<void> => {
+      if (!writerRef.current) throw new Error("Not connected");
+      await writerRef.current.write(data);
+  }, []);
+
   const readLine = useCallback(async (): Promise<string | null> => {
     if (lineQueueRef.current.length > 0) return lineQueueRef.current.shift() ?? null;
     await new Promise((resolve) => setTimeout(resolve, 10));
     return lineQueueRef.current.shift() ?? null;
   }, []);
 
+  const clearBuffer = useCallback(() => {
+    lineQueueRef.current = [];
+  }, []);
+
   const readUntilTimeout = useCallback(async (timeoutMs: number = 500): Promise<string> => {
       const start = Date.now();
       const lines: string[] = [];
-      lineQueueRef.current = [];
+      // Do not clear queue here to avoid race conditions with fast responses
       while (Date.now() - start < timeoutMs) {
         if (lineQueueRef.current.length) lines.push(lineQueueRef.current.shift()!);
         else await new Promise((r) => setTimeout(r, 10));
@@ -350,7 +361,7 @@ export function useWebSerial(): UseWebSerialReturn {
     setIsReading(false);
   }, []);
 
-    return { status, error, isSupported, port, hasAuthorizedDevice, requestPort, findAuthorizedPort, connect, disconnect, sendCommand, readLine, readUntilTimeout, startReading, stopReading, isReading };
+    return { status, error, isSupported, port, hasAuthorizedDevice, requestPort, findAuthorizedPort, connect, disconnect, sendCommand, sendBinary, readLine, readUntilTimeout, clearBuffer, startReading, stopReading, isReading };
 
   }
 

@@ -8,6 +8,7 @@ import { PadConfigGroup } from "./PadConfigGroup";
 import { TimingSettings } from "./TimingSettings";
 import { ADCChannelSettings } from "./ADCChannelSettings";
 import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
+import { BootScreenEditor } from "./BootScreenEditor";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
 import { RotateCcw, Download, Upload } from "lucide-react";
@@ -245,6 +246,9 @@ export function ConfigurationTab() {
 
             {/* Key Mappings */}
             <InteractiveKeyMapping />
+
+            {/* Custom Boot Screen */}
+            <BootScreenEditor />
           </>
         )}
 
@@ -280,20 +284,8 @@ export function ConfigurationTab() {
               </Button>
             </div>
             
-            <div className="mt-4 pt-4 border-t">
-              <Button 
-                variant="destructive" 
-                className="w-full" 
-                onClick={() => setShowResetDialog(true)}
-                disabled={!isConnected}
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Factory Reset
-              </Button>
-            </div>
-
             <p className="text-xs text-muted-foreground mt-2">
-              Export your current configuration to a JSON file, or import a previously saved config.
+              Export your current configuration to a JSON file, or import a previously saved config. It will not include your custom logo.
             </p>
           </CardContent>
         </Card>

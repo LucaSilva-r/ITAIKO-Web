@@ -20,7 +20,7 @@ interface UseDeviceStreamingReturn {
   // Zero-allocation buffer access for graphs
   buffers: React.RefObject<PadBuffers>;
 
-  startStreaming: () => Promise<void>;
+  startStreaming: (force?: boolean) => Promise<void>;
   stopStreaming: () => Promise<void>;
   clearData: () => void;
 
@@ -148,8 +148,8 @@ export function useDeviceStreaming({
     }
   }, []);
 
-  const startStreamingFn = useCallback(async (): Promise<void> => {
-    if (!isConnected || isStreaming) return;
+  const startStreamingFn = useCallback(async (force?: boolean): Promise<void> => {
+    if (!isConnected || (isStreaming && !force)) return;
     try {
       await sendCommand(DeviceCommandValues.START_STREAMING);
       setIsStreaming(true);

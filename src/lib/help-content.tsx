@@ -134,6 +134,42 @@ export function initializeHelpContent() {
     ),
   });
 
+  // Boot Screen
+  registerHelp("boot-screen", {
+    title: "Boot Screen",
+    description: "Customize the startup splash screen of your controller.",
+    content: (
+      <div className="space-y-4">
+        <section>
+          <h4 className="font-semibold">Image Requirements</h4>
+          <p className="text-muted-foreground">
+            The image will be converted to a 128x64 pixel 1-bit monochrome (black and white) bitmap.
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>Supported formats: PNG, JPG, BMP</li>
+              <li>Optimal aspect ratio: 2:1</li>
+              <li>Colors: Will be dithered/thresholded to black and white</li>
+            </ul>
+          </p>
+        </section>
+        <section>
+          <h4 className="font-semibold">How to Use</h4>
+          <p className="text-muted-foreground">
+            1. Select an image file.<br />
+            2. Preview the monochrome conversion.<br />
+            3. Click "Upload to Device" to flash the new image.<br />
+            4. The new splash screen will appear next time you plug in the device.
+          </p>
+        </section>
+        <section>
+          <h4 className="font-semibold">Restoring Default</h4>
+          <p className="text-muted-foreground">
+            Click the trash icon to clear the custom image and restore the original ITAIKO logo.
+          </p>
+        </section>
+      </div>
+    ),
+  });
+
   // Live Monitor
   registerHelp("live-monitor", {
     title: "Live Monitor",

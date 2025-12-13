@@ -11,6 +11,7 @@ import { DEFAULT_DEVICE_CONFIG } from "@/lib/default-config";
 interface UseDeviceConfigProps {
   sendCommand: (command: DeviceCommand, data?: string) => Promise<void>;
   readUntilTimeout: (timeoutMs?: number) => Promise<string>;
+  clearBuffer?: () => void;
   isConnected: boolean;
 }
 
@@ -66,6 +67,7 @@ interface UseDeviceConfigReturn {
 export function useDeviceConfig({
   sendCommand,
   readUntilTimeout,
+  clearBuffer,
   isConnected,
 }: UseDeviceConfigProps): UseDeviceConfigReturn {
   const [config, setConfig] = useState<DeviceConfig>(DEFAULT_DEVICE_CONFIG);
@@ -139,6 +141,7 @@ export function useDeviceConfig({
 
     setIsLoading(true);
     try {
+      if (clearBuffer) clearBuffer();
       await sendCommand(DeviceCommandValues.READ_SETTINGS);
       const response = await readUntilTimeout(1000);
       const { settings, version } = parseSettingsResponse(response);
@@ -171,6 +174,7 @@ export function useDeviceConfig({
     setIsLoading(true);
     try {
       const settingsString = configToSettingsString(config);
+      if (clearBuffer) clearBuffer();
       await sendCommand(DeviceCommandValues.WRITE_MODE, settingsString);
       setSavedConfig(config);
       return true;
@@ -203,7 +207,7 @@ export function useDeviceConfig({
   }, [isConnected, sendCommand, writeToDevice]);
 
   const resetToDefaults = useCallback((): void => {
-    setConfig((prev) => {
+    setConfig(() => {
         const next = DEFAULT_DEVICE_CONFIG;
         handleCommit(next);
         return next;
@@ -211,9 +215,9 @@ export function useDeviceConfig({
   }, [lastCommittedConfig]);
 
   const resetPadThresholds = useCallback((): void => {
-    setConfig((prev) => {
+    setConfig((_) => {
       const next = {
-        ...prev,
+        ..._,
         pads: DEFAULT_DEVICE_CONFIG.pads,
       };
       handleCommit(next);
@@ -222,9 +226,9 @@ export function useDeviceConfig({
   }, [lastCommittedConfig]);
 
   const resetTiming = useCallback((): void => {
-    setConfig((prev) => {
+    setConfig((_) => {
       const next = {
-        ...prev,
+        ..._,
         timing: DEFAULT_DEVICE_CONFIG.timing,
       };
       handleCommit(next);
@@ -233,9 +237,9 @@ export function useDeviceConfig({
   }, [lastCommittedConfig]);
 
   const resetKeyMappings = useCallback((): void => {
-    setConfig((prev) => {
+    setConfig((_) => {
         const next = {
-          ...prev,
+          ..._,
           keyMappings: DEFAULT_DEVICE_CONFIG.keyMappings,
         };
         handleCommit(next);
@@ -244,9 +248,9 @@ export function useDeviceConfig({
   }, [lastCommittedConfig]);
 
   const resetADCChannels = useCallback((): void => {
-    setConfig((prev) => {
+    setConfig((_) => {
         const next = {
-          ...prev,
+          ..._,
           adcChannels: DEFAULT_DEVICE_CONFIG.adcChannels,
         };
         handleCommit(next);
