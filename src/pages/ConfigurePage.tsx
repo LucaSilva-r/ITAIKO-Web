@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DeviceProvider, useDevice } from "@/context/DeviceContext";
+import { DeviceProvider } from "@/context/DeviceContext";
 import { HeaderConnectionStatus } from "@/components/connection/HeaderConnectionStatus";
 import { FirmwareUpdatePanel } from "@/components/connection/FirmwareUpdatePanel";
 import { FirmwareUpdateModal } from "@/components/connection/FirmwareUpdateModal";
@@ -14,7 +14,6 @@ initializeHelpContent();
 function ConfigurePageContent() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "config";
-  const { isReady } = useDevice();
 
   const onTabChange = (value: string) => {
     setSearchParams({ tab: value });

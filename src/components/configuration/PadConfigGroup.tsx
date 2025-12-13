@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import type { PadName } from "@/types";
 import { PAD_LABELS, PAD_COLORS } from "@/types";
 import { THRESHOLD_MIN, THRESHOLD_MAX } from "@/lib/default-config";
-import { useEffect, useRef } from "react";
 
 interface PadConfigGroupProps {
   pad: PadName;

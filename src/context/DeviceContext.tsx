@@ -40,7 +40,7 @@ interface DeviceContextValue {
   resetTiming: () => void;
   resetKeyMappings: () => void;
   resetADCChannels: () => void;
-  updatePadThreshold: (pad: PadName, field: keyof PadThresholds, value: number) => void;
+  updatePadThreshold: (pad: PadName, field: keyof PadThresholds, value: number, commit?: boolean) => void;
   updateTiming: (field: keyof TimingConfig, value: number) => void;
   setDoubleInputMode: (enabled: boolean) => void;
   updateKeyMapping: (category: keyof KeyMappings, key: string, value: number) => void;
@@ -48,12 +48,14 @@ interface DeviceContextValue {
   exportConfig: () => void;
   importConfig: (file: File) => Promise<boolean>;
   rebootToBootsel: () => Promise<void>;
+  uploadBootScreen: (data: Uint8Array) => Promise<boolean>;
+  clearBootScreen: () => Promise<boolean>;
 
   // Streaming
   isStreaming: boolean;
   triggers: TriggerState;
   buffers: RefObject<PadBuffers>;
-  startStreaming: () => Promise<void>;
+  startStreaming: (force?: boolean) => Promise<void>;
   stopStreaming: () => Promise<void>;
   clearData: () => void;
   maxBufferSize: number;
@@ -88,6 +90,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
   const deviceConfig = useDeviceConfig({
     sendCommand: serial.sendCommand,
     readUntilTimeout: serial.readUntilTimeout,
+    clearBuffer: serial.clearBuffer,
     isConnected,
   });
 
@@ -129,6 +132,66 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       } catch (err) {
         console.error("Failed to reboot device:", err);
       }
+    }
+  };
+
+  const uploadBootScreen = async (data: Uint8Array): Promise<boolean> => {
+    if (!isConnected) return false;
+    try {
+      // 0. Ensure streaming is stopped to prevent buffer pollution
+      if (streaming.isStreaming) {
+         await streaming.stopStreaming();
+         // Wait for streaming to actually stop and buffer to clear
+         await new Promise(r => setTimeout(r, 200));
+      }
+
+      // 1. Start upload
+      serial.clearBuffer();
+      await serial.sendCommand(DeviceCommand.BOOT_SCREEN_START);
+      
+      // Give device a moment to enter upload mode
+      await new Promise(r => setTimeout(r, 200));
+
+      // 2. Send binary data in chunks of 64 bytes (USB CDC packet size)
+      const CHUNK_SIZE = 64;
+      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+        const chunk = data.slice(i, i + CHUNK_SIZE);
+        await serial.sendBinary(chunk);
+        // Small delay between chunks to prevent buffer overflow on device
+        await new Promise(r => setTimeout(r, 10));
+      }
+      
+      // 3. Wait for save confirmation (Flash write takes time)
+      const fullResponse = await serial.readUntilTimeout(5000); // Increased timeout to 5s
+      const lines = fullResponse.split('\n');
+      const savedSuccessfully = lines.some(line => line.includes("BITMAP_SAVED"));
+
+      if (savedSuccessfully) {
+        return true;
+      }
+      
+      console.error("Bitmap save failed or timed out. Full response:", fullResponse);
+      return false;
+
+    } catch (e) {
+      console.error("Error uploading boot screen:", e);
+      return false;
+    } finally {
+        // Always restart streaming after the operation finishes
+        streaming.startStreaming(true);
+    }
+  };
+
+  const clearBootScreen = async (): Promise<boolean> => {
+    if (!isConnected) return false;
+    try {
+      serial.clearBuffer();
+      await serial.sendCommand(DeviceCommand.BOOT_SCREEN_CLEAR);
+      const response = await serial.readUntilTimeout(1000);
+      return response.includes("BITMAP_CLEARED");
+    } catch (e) {
+      console.error("Error clearing boot screen:", e);
+      return false;
     }
   };
   
@@ -198,6 +261,8 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       exportConfig: deviceConfig.exportConfig,
       importConfig: deviceConfig.importConfig,
       rebootToBootsel,
+      uploadBootScreen,
+      clearBootScreen,
 
       // Streaming
       isStreaming: streaming.isStreaming,
