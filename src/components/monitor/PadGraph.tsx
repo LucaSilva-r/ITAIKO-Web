@@ -343,31 +343,39 @@ export function PadGraph({
 
       // Direct write to WebGL buffer - ZERO allocation in this loop
       for (let i = 0; i < displayPoints; i++) {
-        const srcStart = Math.floor(clampedStart + i * step);
-        const srcEnd = Math.min(Math.floor(clampedStart + (i + 1) * step), clampedEnd);
+        // Calculate the range of data indices this pixel covers
+        const fStart = clampedStart + i * step;
+        const fEnd = clampedStart + (i + 1) * step;
+        
+        const iStart = Math.floor(fStart);
+        const iEnd = Math.floor(fEnd);
 
-        // Downsample by MAX (peak detection)
-        let maxDelta = 0;
-        let sampleCount = 0;
-        for (let j = srcStart; j < srcEnd; j++) {
-          const val = readFromCircularBuffer(delta, head, count, capacity, j);
-          if (val > maxDelta) maxDelta = val;
-          sampleCount++;
-        }
+        let val = 0;
 
-        if (sampleCount > 0) {
-          const dataX = clampedStart + (i + 0.5) * step;
-
-          // Transform to WebGL coordinates (-1 to 1)
-          const relativeX = dataX - dataOffset;
-          const webglX = (relativeX / numPoints) * 2 - 1;
-          const webglYDelta = (maxDelta / maxADC) * 2 - 1;
-
-          deltaLine.setX(i, webglX);
-          deltaLine.setY(i, webglYDelta);
+        // If the window falls within a single integer index (oversampling/zoomed in)
+        if (iStart === iEnd) {
+          val = readFromCircularBuffer(delta, head, count, capacity, iStart);
         } else {
-          deltaLine.setX(i, -2);
+          // Downsample by MAX (peak detection) across the range
+          let maxV = 0;
+          const loopEnd = Math.min(iEnd, clampedEnd);
+          
+          for (let j = iStart; j < loopEnd; j++) {
+            const v = readFromCircularBuffer(delta, head, count, capacity, j);
+            if (v > maxV) maxV = v;
+          }
+          val = maxV;
         }
+
+        const dataX = clampedStart + (i + 0.5) * step;
+
+        // Transform to WebGL coordinates (-1 to 1)
+        const relativeX = dataX - dataOffset;
+        const webglX = (relativeX / numPoints) * 2 - 1;
+        const webglYDelta = (val / maxADC) * 2 - 1;
+
+        deltaLine.setX(i, webglX);
+        deltaLine.setY(i, webglYDelta);
       }
 
       wglp.update();
