@@ -125,7 +125,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.kaLeft}
               style={{
                 opacity: triggers.kaLeft ? 0.6 : 0,
-                transition: triggers.kaLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.kaLeft ? "none" : "opacity 200ms ease-out",
               }}
             />
             {/* Ka Right - right half of outer ring */}
@@ -134,7 +134,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.kaRight}
               style={{
                 opacity: triggers.kaRight ? 0.6 : 0,
-                transition: triggers.kaRight ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.kaRight ? "none" : "opacity 200ms ease-out",
               }}
             />
             {/* Don Left - left half of inner circle */}
@@ -143,7 +143,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.donLeft}
               style={{
                 opacity: triggers.donLeft ? 0.6 : 0,
-                transition: triggers.donLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.donLeft ? "none" : "opacity 200ms ease-out",
               }}
             />
             {/* Don Right - right half of inner circle */}
@@ -152,7 +152,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.donRight}
               style={{
                 opacity: triggers.donRight ? 0.6 : 0,
-                transition: triggers.donRight ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.donRight ? "none" : "opacity 200ms ease-out",
               }}
             />
           </svg>
