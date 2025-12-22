@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useDevice } from "@/context/DeviceContext";
 import {
   Dialog,
@@ -19,9 +19,11 @@ type RecoveryStatus =
   | 'rebooting'
   | 'ready_to_nuke'
   | 'nuking'
+  | 'confirm_nuke'
   | 'waiting_after_nuke'
   | 'ready_to_flash'
   | 'flashing'
+  | 'confirm_flash'
   | 'complete'
   | 'error';
 
@@ -44,16 +46,22 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
   const isRecovering = status !== 'idle' && status !== 'complete' && status !== 'error';
   const canClose = !isRecovering || status === 'ready_to_nuke' || status === 'ready_to_flash';
 
+  // Reset state when modal fully closes to avoid flash of content
+  useEffect(() => {
+    if (!open) {
+      const timeout = setTimeout(() => {
+        setStatus('idle');
+        setError(null);
+        nukeBlobRef.current = null;
+        firmwareBlobRef.current = null;
+      }, 300); // Wait for transition
+      return () => clearTimeout(timeout);
+    }
+  }, [open]);
+
   const handleOpenChange = (newOpen: boolean) => {
     if (!canClose && !newOpen) {
       return; // Don't allow closing during async operations
-    }
-    if (!newOpen) {
-      // Reset state when closing
-      setStatus('idle');
-      setError(null);
-      nukeBlobRef.current = null;
-      firmwareBlobRef.current = null;
     }
     onOpenChange(newOpen);
   };
@@ -91,6 +99,32 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
     }
   };
 
+  const prepareFirmware = async () => {
+      // Fetch firmware from local public folder
+      const firmwareResponse = await fetch('/firmware/ITAIKO.uf2');
+      if (!firmwareResponse.ok) {
+        throw new Error('Failed to download firmware');
+      }
+      firmwareBlobRef.current = await firmwareResponse.blob();
+      firmwareNameRef.current = 'ITAIKO.uf2';
+
+      // Ready for user to save firmware
+      setStatus('ready_to_flash');
+  };
+
+  const handleNukeConfirmed = async () => {
+      setStatus('waiting_after_nuke');
+      // Give it a moment for the device to actually reboot if they just dragged it
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      try {
+        await prepareFirmware();
+      } catch (err) {
+        console.error('Firmware prep failed:', err);
+        setError('Failed to prepare firmware file');
+        setStatus('error');
+      }
+  };
+
   // Step 2: User clicks to save flash_nuke.uf2
   const handleSaveNuke = async () => {
     if (!nukeBlobRef.current) {
@@ -102,38 +136,47 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
     try {
       setStatus('nuking');
 
-      // Show save dialog for flash_nuke - this is triggered by user click!
-      // @ts-expect-error - showSaveFilePicker is not in standard types yet
-      const nukeHandle = await window.showSaveFilePicker({
-        suggestedName: 'flash_nuke.uf2',
-        types: [{
-          description: 'UF2 Firmware',
-          accept: { 'application/x-uf2': ['.uf2'] },
-        }],
-      });
-      const nukeWritable = await nukeHandle.createWritable();
-      await nukeWritable.write(nukeBlobRef.current);
-      await nukeWritable.close();
-
-      // Wait for device to wipe and reboot
-      setStatus('waiting_after_nuke');
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      // Fetch firmware from local public folder
-      const firmwareResponse = await fetch('/firmware/ITAIKO.uf2');
-      if (!firmwareResponse.ok) {
-        throw new Error('Failed to download firmware');
+      if ('showSaveFilePicker' in window) {
+        // Show save dialog for flash_nuke - this is triggered by user click!
+        // @ts-expect-error - showSaveFilePicker is not in standard types yet
+        const nukeHandle = await window.showSaveFilePicker({
+          suggestedName: 'flash_nuke.uf2',
+          types: [{
+            description: 'UF2 Firmware',
+            accept: { 'application/x-uf2': ['.uf2'] },
+          }],
+        });
+        const nukeWritable = await nukeHandle.createWritable();
+        await nukeWritable.write(nukeBlobRef.current);
+        await nukeWritable.close();
+        
+        // Automatic: Wait for device to wipe and reboot
+        setStatus('waiting_after_nuke');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await prepareFirmware();
+      } else {
+        // Fallback: Manual download
+        const url = window.URL.createObjectURL(nukeBlobRef.current);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'flash_nuke.uf2';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        // Manual: Ask user to confirm drag & drop
+        setStatus('confirm_nuke');
       }
-      firmwareBlobRef.current = await firmwareResponse.blob();
-      firmwareNameRef.current = 'ITAIKO.uf2';
-
-      // Ready for user to save firmware
-      setStatus('ready_to_flash');
     } catch (err) {
       console.error('Recovery failed:', err);
       setError(err instanceof Error ? err.message : 'Recovery failed');
       setStatus('error');
     }
+  };
+
+  const handleFlashConfirmed = () => {
+      setStatus('complete');
   };
 
   // Step 3: User clicks to save firmware
@@ -147,20 +190,35 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
     try {
       setStatus('flashing');
 
-      // Show save dialog for firmware - this is triggered by user click!
-      // @ts-expect-error - showSaveFilePicker is not in standard types yet
-      const firmwareHandle = await window.showSaveFilePicker({
-        suggestedName: firmwareNameRef.current,
-        types: [{
-          description: 'UF2 Firmware',
-          accept: { 'application/x-uf2': ['.uf2'] },
-        }],
-      });
-      const firmwareWritable = await firmwareHandle.createWritable();
-      await firmwareWritable.write(firmwareBlobRef.current);
-      await firmwareWritable.close();
-
-      setStatus('complete');
+      if ('showSaveFilePicker' in window) {
+        // Show save dialog for firmware - this is triggered by user click!
+        // @ts-expect-error - showSaveFilePicker is not in standard types yet
+        const firmwareHandle = await window.showSaveFilePicker({
+          suggestedName: firmwareNameRef.current,
+          types: [{
+            description: 'UF2 Firmware',
+            accept: { 'application/x-uf2': ['.uf2'] },
+          }],
+        });
+        const firmwareWritable = await firmwareHandle.createWritable();
+        await firmwareWritable.write(firmwareBlobRef.current);
+        await firmwareWritable.close();
+        
+        setStatus('complete');
+      } else {
+        // Fallback: Manual download
+        const url = window.URL.createObjectURL(firmwareBlobRef.current);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = firmwareNameRef.current;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        // Manual: Ask user to confirm drag & drop
+        setStatus('confirm_flash');
+      }
     } catch (err) {
       console.error('Recovery failed:', err);
       setError(err instanceof Error ? err.message : 'Recovery failed');
@@ -208,6 +266,29 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
           </div>
         );
 
+      case 'confirm_nuke':
+        return (
+          <div className="space-y-4">
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
+              <div className="flex items-center gap-2 text-amber-800 mb-2">
+                <Download className="h-5 w-5" />
+                <span className="font-semibold">File downloaded</span>
+              </div>
+              <div className="text-sm text-amber-700 space-y-2">
+                <p>The <strong>flash_nuke.uf2</strong> file has been downloaded to your computer.</p>
+                <ol className="list-decimal list-inside ml-1">
+                  <li>Locate the downloaded file.</li>
+                  <li>Drag and drop it onto the "RPI-RP2" drive.</li>
+                  <li>The device will disconnect and reboot immediately.</li>
+                </ol>
+              </div>
+            </div>
+            <p className="text-sm text-center font-medium">
+              Click Continue after dragging the file.
+            </p>
+          </div>
+        );
+
       case 'waiting_after_nuke':
         return (
           <div className="space-y-4">
@@ -249,6 +330,29 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
           </div>
         );
 
+      case 'confirm_flash':
+        return (
+          <div className="space-y-4">
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
+              <div className="flex items-center gap-2 text-amber-800 mb-2">
+                <Download className="h-5 w-5" />
+                <span className="font-semibold">File downloaded</span>
+              </div>
+              <div className="text-sm text-amber-700 space-y-2">
+                <p>The firmware file has been downloaded to your computer.</p>
+                <ol className="list-decimal list-inside ml-1">
+                  <li>Locate the downloaded file.</li>
+                  <li>Drag and drop it onto the "RPI-RP2" drive.</li>
+                  <li>The device will reboot into application mode.</li>
+                </ol>
+              </div>
+            </div>
+            <p className="text-sm text-center font-medium">
+              Click Done after dragging the file.
+            </p>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -259,7 +363,7 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
       case 'idle':
         return (
           <>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleStartRecovery}>
               <Skull className="h-4 w-4 mr-2" />
               {isConnected ? 'Start Recovery' : 'Start Recovery (Device in Bootsel)'}
@@ -270,7 +374,7 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
       case 'ready_to_nuke':
         return (
           <>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleSaveNuke}>
               <Download className="h-4 w-4 mr-2" />
               Save Flash Nuke
@@ -278,10 +382,20 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
           </>
         );
 
+      case 'confirm_nuke':
+        return (
+          <>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleNukeConfirmed}>
+              Continue
+            </Button>
+          </>
+        );
+
       case 'ready_to_flash':
         return (
           <>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
             <Button onClick={handleSaveFirmware}>
               <Download className="h-4 w-4 mr-2" />
               Save Firmware
@@ -289,13 +403,23 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
           </>
         );
 
+      case 'confirm_flash':
+        return (
+          <>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancel</Button>
+            <Button onClick={handleFlashConfirmed}>
+              Done
+            </Button>
+          </>
+        );
+
       case 'complete':
-        return <Button className="w-full" onClick={() => onOpenChange(false)}>Close</Button>;
+        return <Button className="w-full" onClick={() => handleOpenChange(false)}>Close</Button>;
 
       case 'error':
         return (
           <>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>Close</Button>
             <Button variant="destructive" onClick={handleStartRecovery}>Try Again</Button>
           </>
         );
@@ -383,7 +507,7 @@ export function EmergencyRecoveryModal({ open, onOpenChange }: EmergencyRecovery
               <CheckCircle2 className="h-16 w-16 text-green-500" />
               <h3 className="text-lg font-medium">Recovery Complete!</h3>
               <p className="text-sm text-muted-foreground">
-                Your device has been wiped and reflashed. It will reconnect automatically.
+                Your device has been wiped and reflashed. Please reconnect to your device manually.
               </p>
             </div>
           )}

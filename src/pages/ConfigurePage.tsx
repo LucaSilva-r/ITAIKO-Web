@@ -41,8 +41,11 @@ function ConfigurePageContent() {
             onValueChange={onTabChange}
             className="flex flex-col"
           >
+            <FirmwareUpdatePanel />
+
             {/* Tab Content */}
             <TabsContent value="config" className="mt-0">
+              
               <ConfigurationTab />
             </TabsContent>
 
@@ -51,7 +54,6 @@ function ConfigurePageContent() {
             </TabsContent>
 
             {/* Firmware Update Panel */}
-            <FirmwareUpdatePanel />
 
             {/* Tabs at bottom */}
             <TabsList className="grid w-full grid-cols-2 mt-6">

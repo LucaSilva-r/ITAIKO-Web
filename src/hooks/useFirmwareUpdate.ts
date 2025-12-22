@@ -95,23 +95,38 @@ export function useFirmwareUpdate(currentVersion?: string) {
       // 4. Flash (Save File via File System Access API)
       setStatus('flashing');
 
-      // @ts-expect-error - showSaveFilePicker is not in standard types yet
-      const handle = await window.showSaveFilePicker({
-        suggestedName: latestFirmware.firmwareName,
-        types: [{
-          description: 'UF2 Firmware',
-          accept: { 'application/x-uf2': ['.uf2'] },
-        }],
-      });
+      // Check if File System Access API is supported (Chromium)
+      if ('showSaveFilePicker' in window) {
+        // @ts-expect-error - showSaveFilePicker is not in standard types yet
+        const handle = await window.showSaveFilePicker({
+          suggestedName: latestFirmware.firmwareName,
+          types: [{
+            description: 'UF2 Firmware',
+            accept: { 'application/x-uf2': ['.uf2'] },
+          }],
+        });
 
-      // 5. Write to device
-      setStatus('writing');
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
+        // 5. Write to device
+        setStatus('writing');
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
 
-      setProgress(100);
-      setStatus('complete');
+        setProgress(100);
+        setStatus('complete');
+      } else {
+        // Fallback for Firefox / others: Manual download
+        setStatus('manual_action_required');
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = latestFirmware.firmwareName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
 
     } catch (err) {
       console.error('Update failed:', err);
