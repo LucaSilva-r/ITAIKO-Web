@@ -1,56 +1,38 @@
 import { useDevice } from "@/context/DeviceContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Download, RefreshCw } from "lucide-react";
+import { AlertCircle, Download } from "lucide-react";
 
 export function FirmwareUpdatePanel() {
   const { isConnected, firmwareUpdate } = useDevice();
   const { status, latestFirmware, setModalOpen } = firmwareUpdate;
 
-  // Only show if connected and there's actually something to show (update available or in progress/error)
-  const shouldShow = isConnected && (
-    status === 'available' ||
-    (status !== 'idle' && status !== 'checking')
-  );
+  // Only show if connected and update is available
+  const shouldShow = isConnected && status === 'available';
 
   if (!shouldShow) {
     return null;
   }
 
   return (
-    <Card className="border-amber-500/50 bg-amber-500/5">
-      <CardContent className="py-4">
-        {status === 'available' && latestFirmware && (
-          <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-1">
-            <div className="flex items-center gap-2 text-sm text-amber-600 font-medium">
-              <AlertCircle className="h-4 w-4" />
-              <span>New firmware available: v{latestFirmware.version}</span>
-            </div>
-            <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white border-none"
-                  onClick={() => setModalOpen(true)}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Review & Update
-                </Button>
-            </div>
+    <div className="z-50 animate-in slide-in-from-top-5 fade-in duration-300">
+      <Card className="border-amber-500/50 bg-amber-500/10 shadow-md backdrop-blur-sm">
+        <CardContent className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-amber-600 font-medium">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <span>Update v{latestFirmware?.version} available</span>
           </div>
-        )}
-        
-        {status !== 'available' && (
-           <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-amber-900">
-                 <RefreshCw className="h-4 w-4 animate-spin" />
-                 <span className="capitalize">{status.replace(/_/g, ' ')}...</span>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setModalOpen(true)}>
-                View Progress
-              </Button>
-           </div>
-        )}
-      </CardContent>
-    </Card>
+          <Button
+            size="sm"
+            variant="ghost"
+            className=" bg-amber-600 hover:bg-amber-700 text-white hover:text-white border-none rounded-sm"
+            onClick={() => setModalOpen(true)}
+          >
+            <Download className="mr-1.5 h-3 w-3" />
+            Update
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -22,7 +22,7 @@ export function FirmwareUpdateModal() {
   const wasCompleteRef = useRef(false);
 
   // Prevent closing when in progress
-  const isUpdating = status !== 'idle' && status !== 'available' && status !== 'checking' && status !== 'complete' && status !== 'error';
+  const isUpdating = status !== 'idle' && status !== 'available' && status !== 'checking' && status !== 'complete' && status !== 'error' && status !== 'manual_action_required';
 
   // Auto-close modal when device reconnects after successful update
   useEffect(() => {
