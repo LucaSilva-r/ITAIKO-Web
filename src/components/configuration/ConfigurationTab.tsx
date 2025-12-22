@@ -30,7 +30,6 @@ export function ConfigurationTab() {
     isConnected,
     isReady,
     triggers,
-    startStreaming,
     saveToFlash,
     configDirty,
     resetPadThresholds,
