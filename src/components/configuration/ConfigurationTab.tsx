@@ -11,6 +11,7 @@ import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
 import { BootScreenEditor } from "./BootScreenEditor";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
+import { HitHistoryGrid } from "@/components/visual/HitHistoryGrid";
 import { RotateCcw, Download, Upload } from "lucide-react";
 import {
   Dialog,
@@ -179,6 +180,11 @@ export function ConfigurationTab() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Hit History Grid - Always visible when connected */}
+      <div className={`transition-all duration-500 ${!isReady ? "opacity-0 h-0 overflow-hidden" : "opacity-100 h-auto"}`}>
+         <HitHistoryGrid />
       </div>
 
       {/* Configuration Settings - Deactivated when not ready */}

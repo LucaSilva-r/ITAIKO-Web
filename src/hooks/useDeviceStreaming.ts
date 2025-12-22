@@ -84,7 +84,7 @@ export function useDeviceStreaming({
 
   // Throttling
   const lastFrameUpdateRef = useRef(0);
-  const FRAME_THROTTLE_MS = 16; // ~60fps
+  const FRAME_THROTTLE_MS = 8; // ~120fps for smoother visuals
 
   const setMaxBufferSize = useCallback((size: number) => {
     setMaxBufferSizeState(size);
