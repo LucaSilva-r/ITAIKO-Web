@@ -59,7 +59,7 @@ export const DEFAULT_DEVICE_CONFIG: DeviceConfig = {
 
 export const DEFAULT_MONITOR_SETTINGS: MonitorSettings = {
   refreshRate: 50, // 50ms = 20Hz update rate for graphs
-  historyBuffer: 1000, // 1000 samples visible
+  historyBuffer: 5000, // 5000 samples visible
   csvLogging: false,
 };
 

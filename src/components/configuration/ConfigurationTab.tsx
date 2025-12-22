@@ -11,6 +11,7 @@ import { InteractiveKeyMapping } from "./InteractiveKeyMapping";
 import { BootScreenEditor } from "./BootScreenEditor";
 import { PAD_NAMES, PAD_COLORS } from "@/types";
 import { HelpButton } from "@/components/ui/help-modal";
+import { HitHistoryGrid } from "@/components/visual/HitHistoryGrid";
 import { RotateCcw, Download, Upload } from "lucide-react";
 import {
   Dialog,
@@ -37,7 +38,7 @@ export function ConfigurationTab() {
     exportConfig,
     importConfig,
   } = useDevice();
-  
+
   const [searchParams, setSearchParams] = useSearchParams();
   const advancedParam = searchParams.get("advanced");
 
@@ -79,19 +80,6 @@ export function ConfigurationTab() {
 
   const isFirstRender = useRef(true);
 
-  // Use ref to always have latest function without causing effect re-runs
-  const startStreamingRef = useRef(startStreaming);
-  useEffect(() => {
-    startStreamingRef.current = startStreaming;
-  });
-
-  // Start streaming when device is ready (for visual drum)
-  useEffect(() => {
-    if (isReady) {
-      startStreamingRef.current();
-    }
-  }, [isReady]);
-
   // Debounced auto-save: save to flash 500ms after config changes
   const saveToFlashRef = useRef(saveToFlash);
   useEffect(() => {
@@ -120,7 +108,7 @@ export function ConfigurationTab() {
       {/* Visual Drum */}
       <div className="flex flex-col items-center py-4 relative">
         {/* Drum Container - Blurred when not ready */}
-        <div 
+        <div
           className={`relative w-144 h-144 transition-all duration-500 ${!isReady ? "blur-sm opacity-50 grayscale" : ""}`}
         >
           {/* Background Image */}
@@ -137,7 +125,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.kaLeft}
               style={{
                 opacity: triggers.kaLeft ? 0.6 : 0,
-                transition: triggers.kaLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.kaLeft ? "none" : "opacity 200ms ease-out",
               }}
             />
             {/* Ka Right - right half of outer ring */}
@@ -146,7 +134,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.kaRight}
               style={{
                 opacity: triggers.kaRight ? 0.6 : 0,
-                transition: triggers.kaRight ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.kaRight ? "none" : "opacity 200ms ease-out",
               }}
             />
             {/* Don Left - left half of inner circle */}
@@ -155,7 +143,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.donLeft}
               style={{
                 opacity: triggers.donLeft ? 0.6 : 0,
-                transition: triggers.donLeft ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.donLeft ? "none" : "opacity 200ms ease-out",
               }}
             />
             {/* Don Right - right half of inner circle */}
@@ -164,7 +152,7 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.donRight}
               style={{
                 opacity: triggers.donRight ? 0.6 : 0,
-                transition: triggers.donRight ? "opacity 0ms" : "opacity 200ms ease-out",
+                transition: triggers.donRight ? "none" : "opacity 200ms ease-out",
               }}
             />
           </svg>
@@ -180,6 +168,10 @@ export function ConfigurationTab() {
           </div>
         )}
       </div>
+
+      {/* Hit History Grid - Always visible when connected */}
+      <HitHistoryGrid />
+
 
       {/* Configuration Settings - Deactivated when not ready */}
       <div className={`space-y-6 transition-all duration-500 ${!isReady ? "pointer-events-none opacity-50" : ""}`}>
@@ -283,7 +275,7 @@ export function ConfigurationTab() {
                 Export Config
               </Button>
             </div>
-            
+
             <p className="text-xs text-muted-foreground mt-2">
               Export your current configuration to a JSON file, or import a previously saved config. It will not include your custom logo.
             </p>
@@ -319,7 +311,7 @@ export function ConfigurationTab() {
               Are you sure you want to reset all configuration settings to their default values? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="flex items-center space-x-2 py-4">
             <Switch id="backup-reset" checked={backupReset} onCheckedChange={setBackupReset} />
             <Label htmlFor="backup-reset">Backup configuration before resetting</Label>

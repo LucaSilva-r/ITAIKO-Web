@@ -18,6 +18,7 @@ export const DeviceCommand = {
   REBOOT_TO_BOOTSEL: 1004,
   START_STREAMING: 2000,
   STOP_STREAMING: 2001,
+  START_INPUT_STREAMING: 2002,
   // Custom Boot Screen
   BOOT_SCREEN_START: 3000,
   BOOT_SCREEN_CHUNK: 3001, // Deprecated
@@ -45,19 +46,6 @@ export const PAD_COLORS: Record<PadName, string> = {
   donRight: "#ff4221", // Red (face)
   kaRight: "#6bbdc6", // Cyan (rim)
 };
-
-// Streaming Data
-export interface PadStreamData {
-  triggered: boolean;
-  raw: number;
-  delta: number;
-  duration: number;
-}
-
-export interface StreamFrame {
-  timestamp: number;
-  pads: Record<PadName, PadStreamData>;
-}
 
 // Graph Data Point (legacy - kept for compatibility)
 export interface PadGraphPoint {

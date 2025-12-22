@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { DeviceCommand, PadName, PadBuffer, PadBuffers } from "@/types";
 import { DeviceCommand as DeviceCommandValues, PAD_NAMES } from "@/types";
-import { parseStreamLine } from "@/lib/serial-protocol";
+import { parseRawStreamLine, parseInputStreamLine } from "@/lib/serial-protocol";
 
 interface UseDeviceStreamingProps {
-  sendCommand: (command: DeviceCommand) => Promise<void>;
+  sendCommand: (command: DeviceCommand, data?: string) => Promise<void>;
   startReading: (onData: (line: string) => void) => void;
   stopReading: () => void;
   isConnected: boolean;
@@ -13,14 +13,17 @@ interface UseDeviceStreamingProps {
 // Simple trigger state - just 4 booleans
 export type TriggerState = Record<PadName, boolean>;
 
+export type StreamingMode = 'none' | 'raw' | 'input' | 'both';
+
 interface UseDeviceStreamingReturn {
   isStreaming: boolean;
+  streamingMode: StreamingMode;
   triggers: TriggerState;  // Simple: just which pads are active
 
   // Zero-allocation buffer access for graphs
   buffers: React.RefObject<PadBuffers>;
 
-  startStreaming: (force?: boolean) => Promise<void>;
+  startStreaming: (mode?: StreamingMode) => Promise<void>;
   stopStreaming: () => Promise<void>;
   clearData: () => void;
 
@@ -33,7 +36,7 @@ function createPadBuffer(capacity: number): PadBuffer {
     raw: new Float32Array(capacity),
     delta: new Float32Array(capacity),
     head: 0,
-    count: 0,
+    count: capacity,
     capacity,
   };
 }
@@ -49,21 +52,21 @@ function createPadBuffers(capacity: number): PadBuffers {
 
 function resizePadBuffer(buffer: PadBuffer, newCapacity: number): PadBuffer {
   const newBuffer = createPadBuffer(newCapacity);
-  const copyCount = Math.min(buffer.count, newCapacity);
-  const startRead = (buffer.head - buffer.count + buffer.capacity) % buffer.capacity;
+  const copyCount = Math.min(buffer.capacity, newCapacity);
+  const startRead = buffer.head;
 
   for (let i = 0; i < copyCount; i++) {
-    const readIdx = (startRead + buffer.count - copyCount + i) % buffer.capacity;
+    const readIdx = (startRead + buffer.capacity - copyCount + i) % buffer.capacity;
     newBuffer.raw[i] = buffer.raw[readIdx];
     newBuffer.delta[i] = buffer.delta[readIdx];
   }
 
   newBuffer.head = copyCount % newCapacity;
-  newBuffer.count = copyCount;
+  newBuffer.count = newCapacity;
   return newBuffer;
 }
 
-const DEFAULT_BUFFER_SIZE = 1000;
+const DEFAULT_BUFFER_SIZE = 5000;
 const INITIAL_TRIGGERS: TriggerState = { kaLeft: false, donLeft: false, donRight: false, kaRight: false };
 
 export function useDeviceStreaming({
@@ -73,6 +76,7 @@ export function useDeviceStreaming({
   isConnected,
 }: UseDeviceStreamingProps): UseDeviceStreamingReturn {
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMode, setStreamingMode] = useState<StreamingMode>('none');
   const [triggers, setTriggers] = useState<TriggerState>(INITIAL_TRIGGERS);
   const [maxBufferSize, setMaxBufferSizeState] = useState(DEFAULT_BUFFER_SIZE);
 
@@ -84,7 +88,7 @@ export function useDeviceStreaming({
 
   // Throttling
   const lastFrameUpdateRef = useRef(0);
-  const FRAME_THROTTLE_MS = 16; // ~60fps
+  const FRAME_THROTTLE_MS = 8; // ~120fps for smoother visuals
 
   const setMaxBufferSize = useCallback((size: number) => {
     setMaxBufferSizeState(size);
@@ -94,34 +98,43 @@ export function useDeviceStreaming({
   }, []);
 
   const handleStreamData = useCallback((line: string) => {
-    const frame = parseStreamLine(line);
-    if (!frame) return;
+    let inputs: Record<PadName, boolean> | null = null;
+    let raws: Record<PadName, number> | null = null;
+
+    // 1. Try Input Hex (1-2 chars)
+    if (line.length <= 2) {
+       inputs = parseInputStreamLine(line);
+    }
+    // 2. Try Raw Hex (16 chars)
+    else if (line.length === 16) {
+       raws = parseRawStreamLine(line);
+    }
 
     const now = performance.now();
     const buffers = buffersRef.current;
     const accumulated = accumulatedTriggersRef.current;
 
-    // Process each pad - write to buffer and accumulate triggers
-    for (let i = 0; i < 4; i++) {
-      const pad = PAD_NAMES[i];
-      const padData = frame.pads[pad];
+    // Process Inputs
+    if (inputs) {
+        PAD_NAMES.forEach(pad => {
+            if (inputs![pad]) accumulated[pad] = true;
+        });
+    }
 
-      // Latch trigger
-      if (padData.triggered) {
-        accumulated[pad] = true;
-      }
+    // Process Raws
+    if (raws) {
+        PAD_NAMES.forEach(pad => {
+            const buffer = buffers[pad];
+            const rawVal = raws![pad];
+            const previousRaw = previousRawRef.current[pad];
+            const delta = Math.max(0, rawVal - previousRaw);
 
-      // Write to circular buffer
-      const buffer = buffers[pad];
-      const previousRaw = previousRawRef.current[pad];
-      const delta = Math.max(0, padData.raw - previousRaw);
+            buffer.raw[buffer.head] = rawVal;
+            buffer.delta[buffer.head] = delta;
+            buffer.head = (buffer.head + 1) % buffer.capacity;
 
-      buffer.raw[buffer.head] = padData.raw;
-      buffer.delta[buffer.head] = delta;
-      buffer.head = (buffer.head + 1) % buffer.capacity;
-      if (buffer.count < buffer.capacity) buffer.count++;
-
-      previousRawRef.current[pad] = padData.raw;
+            previousRawRef.current[pad] = rawVal;
+        });
     }
 
     // Throttled UI update - only update if triggers changed
@@ -148,16 +161,26 @@ export function useDeviceStreaming({
     }
   }, []);
 
-  const startStreamingFn = useCallback(async (force?: boolean): Promise<void> => {
-    if (!isConnected || (isStreaming && !force)) return;
+  const startStreamingFn = useCallback(async (mode: StreamingMode = 'raw'): Promise<void> => {
+    if (!isConnected || streamingMode === mode) return;
     try {
-      await sendCommand(DeviceCommandValues.START_STREAMING);
+      // Stop current if any
+      if (isStreaming) {
+          stopReading();
+          await sendCommand(DeviceCommandValues.STOP_STREAMING);
+          await new Promise(r => setTimeout(r, 50));
+      }
+
+      if (mode === 'raw' || mode === 'both') await sendCommand(DeviceCommandValues.START_STREAMING);
+      if (mode === 'input' || mode === 'both') await sendCommand(DeviceCommandValues.START_INPUT_STREAMING);
+      
+      setStreamingMode(mode);
       setIsStreaming(true);
       startReading(handleStreamData);
     } catch (err) {
       console.error("Failed to start streaming:", err);
     }
-  }, [isConnected, isStreaming, sendCommand, startReading, handleStreamData]);
+  }, [isConnected, isStreaming, streamingMode, sendCommand, startReading, handleStreamData]);
 
   const stopStreamingFn = useCallback(async (): Promise<void> => {
     if (!isStreaming) return;
@@ -168,13 +191,17 @@ export function useDeviceStreaming({
       console.error("Failed to stop streaming:", err);
     } finally {
       setIsStreaming(false);
+      setStreamingMode('none');
     }
   }, [isStreaming, sendCommand, stopReading]);
 
   const clearData = useCallback((): void => {
     PAD_NAMES.forEach((pad) => {
-      buffersRef.current[pad].head = 0;
-      buffersRef.current[pad].count = 0;
+      const buffer = buffersRef.current[pad];
+      buffer.head = 0;
+      buffer.count = buffer.capacity;
+      buffer.raw.fill(0);
+      buffer.delta.fill(0);
       accumulatedTriggersRef.current[pad] = false;
     });
     setTriggers(INITIAL_TRIGGERS);
@@ -183,13 +210,27 @@ export function useDeviceStreaming({
   }, []);
 
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isStreaming) {
+        // Best-effort attempt to stop streaming before tab closes
+        sendCommand(DeviceCommandValues.STOP_STREAMING).catch(() => {});
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
     if (!isConnected && isStreaming) {
       setIsStreaming(false);
     }
-  }, [isConnected, isStreaming]);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isConnected, isStreaming, sendCommand]);
 
   return {
     isStreaming,
+    streamingMode,
     triggers,
     buffers: buffersRef,
     startStreaming: startStreamingFn,
