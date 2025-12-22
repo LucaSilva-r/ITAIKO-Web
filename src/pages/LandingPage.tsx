@@ -82,7 +82,7 @@ export function LandingPage() {
         <div className="px-16 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground w-full">
           <div className="flex items-center gap-2">
             <Usb className="h-4 w-4" />
-            <span>Requires Chrome, Edge, or Opera (WebSerial API)</span>
+            <span>Requires Chrome, Edge, Opera or Firefox with WebSerial extension</span>
           </div>
           <div>ITAIKO</div>
         </div>

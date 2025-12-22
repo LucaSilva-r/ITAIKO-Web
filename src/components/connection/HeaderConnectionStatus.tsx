@@ -38,10 +38,25 @@ export function HeaderConnectionStatus() {
   };
 
   if (!isSupported) {
+    const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
     return (
-      <div className="flex items-center gap-2">
-        <AlertCircle className="h-4 w-4 text-destructive" />
-        <span className="text-sm text-destructive">WebSerial not supported</span>
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <span className="text-sm text-destructive font-medium">
+            {isFirefox ? "Firefox requires an extension for WebSerial" : "WebSerial not supported"}
+          </span>
+        </div>
+        {isFirefox && (
+          <a 
+            href="https://addons.mozilla.org/en-US/firefox/addon/webserial-for-firefox/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[10px] text-primary hover:underline max-w-[200px] text-right leading-tight"
+          >
+            To configure your drum with Firefox, please install the WebSerial extension
+          </a>
+        )}
       </div>
     );
   }
