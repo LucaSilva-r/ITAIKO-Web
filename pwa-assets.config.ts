@@ -6,6 +6,6 @@ export default defineConfig({
   },
   preset,
   images: [
-    'public/itaiko.png',
+    'public/onigiri.svg',
   ]
 })
