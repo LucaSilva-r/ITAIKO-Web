@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Loader2, CheckCircle2, Download } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -130,14 +130,15 @@ export function FirmwareUpdateModal() {
             <div className="space-y-4">
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
                 <div className="flex items-center gap-2 text-amber-800 mb-2">
-                  <AlertCircle className="h-5 w-5" />
-                  <span className="font-semibold">Automatic download failed</span>
+                  <Download className="h-5 w-5" />
+                  <span className="font-semibold">File downloaded</span>
                 </div>
                 <div className="text-sm text-amber-700 space-y-2">
-                  <p>Don't worry, you can still update manually:</p>
+                  <p>The firmware file has been downloaded to your computer.</p>
                   <ol className="list-decimal list-inside ml-1">
-                    <li>The firmware file has been downloaded to your computer.</li>
+                    <li>Locate the downloaded file.</li>
                     <li>Drag and drop the file onto the "RPI-RP2" drive.</li>
+                    <li>The device will automatically reboot when finished.</li>
                   </ol>
                 </div>
               </div>
@@ -170,6 +171,8 @@ export function FirmwareUpdateModal() {
                <Button onClick={handleStartUpdate}>Start Update</Button>
              </>
            ) : status === 'complete' ? (
+             <Button className="w-full" onClick={() => setModalOpen(false)}>Close</Button>
+           ) : status === 'manual_action_required' ? (
              <Button className="w-full" onClick={() => setModalOpen(false)}>Close</Button>
            ) : status === 'error' ? (
              <Button className="w-full" variant="secondary" onClick={() => setModalOpen(false)}>Close</Button>
