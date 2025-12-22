@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useEffect, useRef, useState } from 
 import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
-import { useDeviceStreaming, type TriggerState } from "@/hooks/useDeviceStreaming";
+import { useDeviceStreaming, type TriggerState, type StreamingMode } from "@/hooks/useDeviceStreaming";
 import { useFirmwareUpdate, type FirmwareInfo, type UpdateStatus } from "@/hooks/useFirmwareUpdate";
 import {
   DeviceCommand,
@@ -53,9 +53,10 @@ interface DeviceContextValue {
 
   // Streaming
   isStreaming: boolean;
+  streamingMode: StreamingMode;
   triggers: TriggerState;
   buffers: RefObject<PadBuffers>;
-  startStreaming: (force?: boolean) => Promise<void>;
+  startStreaming: (mode?: StreamingMode) => Promise<void>;
   stopStreaming: () => Promise<void>;
   clearData: () => void;
   maxBufferSize: number;
@@ -137,9 +138,11 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
 
   const uploadBootScreen = async (data: Uint8Array): Promise<boolean> => {
     if (!isConnected) return false;
+    let previousMode: StreamingMode = 'none';
     try {
       // 0. Ensure streaming is stopped to prevent buffer pollution
       if (streaming.isStreaming) {
+         previousMode = streaming.streamingMode;
          await streaming.stopStreaming();
          // Wait for streaming to actually stop and buffer to clear
          await new Promise(r => setTimeout(r, 200));
@@ -178,7 +181,9 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       return false;
     } finally {
         // Always restart streaming after the operation finishes
-        streaming.startStreaming(true);
+        if (previousMode !== 'none') {
+            streaming.startStreaming(previousMode);
+        }
     }
   };
 
@@ -266,6 +271,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
 
       // Streaming
       isStreaming: streaming.isStreaming,
+      streamingMode: streaming.streamingMode,
       triggers: streaming.triggers,
       buffers: streaming.buffers,
       startStreaming: streaming.startStreaming,

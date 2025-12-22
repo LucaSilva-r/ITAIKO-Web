@@ -18,6 +18,7 @@ export const DeviceCommand = {
   REBOOT_TO_BOOTSEL: 1004,
   START_STREAMING: 2000,
   STOP_STREAMING: 2001,
+  START_INPUT_STREAMING: 2002,
   // Custom Boot Screen
   BOOT_SCREEN_START: 3000,
   BOOT_SCREEN_CHUNK: 3001, // Deprecated

@@ -89,7 +89,7 @@ export function ConfigurationTab() {
   // Start streaming when device is ready (for visual drum)
   useEffect(() => {
     if (isReady) {
-      startStreamingRef.current();
+      startStreamingRef.current('input');
     }
   }, [isReady]);
 

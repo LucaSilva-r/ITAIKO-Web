@@ -16,7 +16,7 @@ export function LiveMonitorTab() {
   // Start streaming when device is ready (after config read)
   useEffect(() => {
     if (isReady) {
-      startStreamingRef.current();
+      startStreamingRef.current('raw');
     }
   }, [isReady]);
 
