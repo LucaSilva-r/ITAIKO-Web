@@ -47,19 +47,6 @@ export const PAD_COLORS: Record<PadName, string> = {
   kaRight: "#6bbdc6", // Cyan (rim)
 };
 
-// Streaming Data
-export interface PadStreamData {
-  triggered: boolean;
-  raw: number;
-  delta: number;
-  duration: number;
-}
-
-export interface StreamFrame {
-  timestamp: number;
-  pads: Record<PadName, PadStreamData>;
-}
-
 // Graph Data Point (legacy - kept for compatibility)
 export interface PadGraphPoint {
   time: number;

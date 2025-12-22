@@ -1,8 +1,6 @@
 import type {
   DeviceConfig,
   PadName,
-  PadStreamData,
-  StreamFrame,
   DeviceCommand,
 } from "@/types";
 import { PAD_NAMES, SETTING_INDICES } from "@/types";
@@ -37,37 +35,6 @@ export function parseInputStreamLine(line: string): Record<PadName, boolean> | n
     donLeft: (mask & 2) !== 0,
     donRight: (mask & 4) !== 0,
     kaRight: (mask & 8) !== 0,
-  };
-}
-
-// Parse a single streaming CSV line into pad data
-// Format: triggered,raw,duration (repeated 4 times for Ka_L, Don_L, Don_R, Ka_R)
-// Example: F,200,0,T,1000,45,F,300,0,F,254,0
-export function parseStreamLine(line: string): StreamFrame | null {
-  const parts = line.trim().split(",");
-  if (parts.length !== 12) return null;
-
-  const pads: Record<PadName, PadStreamData> = {} as Record<PadName, PadStreamData>;
-
-  PAD_NAMES.forEach((pad, index) => {
-    const offset = index * 3;
-    const triggeredChar = parts[offset];
-    const raw = parseInt(parts[offset + 1], 10);
-    const duration = parseInt(parts[offset + 2], 10);
-
-    if (isNaN(raw) || isNaN(duration)) return null;
-
-    pads[pad] = {
-      triggered: triggeredChar === "T" || triggeredChar === "1",
-      raw,
-      delta: 0, // Will be calculated by streaming hook
-      duration,
-    };
-  });
-
-  return {
-    timestamp: Date.now(),
-    pads,
   };
 }
 

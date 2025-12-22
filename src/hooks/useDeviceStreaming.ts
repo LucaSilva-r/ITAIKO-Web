@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { DeviceCommand, PadName, PadBuffer, PadBuffers } from "@/types";
 import { DeviceCommand as DeviceCommandValues, PAD_NAMES } from "@/types";
-import { parseStreamLine, parseRawStreamLine, parseInputStreamLine } from "@/lib/serial-protocol";
+import { parseRawStreamLine, parseInputStreamLine } from "@/lib/serial-protocol";
 
 interface UseDeviceStreamingProps {
   sendCommand: (command: DeviceCommand, data?: string) => Promise<void>;
@@ -108,17 +108,6 @@ export function useDeviceStreaming({
     // 2. Try Raw Hex (16 chars)
     else if (line.length === 16) {
        raws = parseRawStreamLine(line);
-    }
-    // 3. Fallback to Legacy CSV
-    else {
-       const legacy = parseStreamLine(line);
-       if (legacy) {
-          inputs = {}; raws = {};
-          PAD_NAMES.forEach(p => {
-             inputs![p] = legacy.pads[p].triggered;
-             raws![p] = legacy.pads[p].raw;
-          });
-       }
     }
 
     const now = performance.now();

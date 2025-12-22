@@ -44,8 +44,8 @@ export function HitHistoryGrid() {
   const clearHistory = () => setHistory([]);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between py-4">
+    <Card className="border-none bg-transparent">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base">Input History</CardTitle>
         <Button variant="ghost" size="sm" onClick={clearHistory}>
           <Trash2 className="h-4 w-4 mr-2" />
@@ -68,7 +68,7 @@ export function HitHistoryGrid() {
                      <div 
                        key={colIndex}
                        className={cn(
-                         "h-8 flex-1 rounded-sm border transition-all duration-75",
+                         "h-8 flex-1 rounded-sm border",
                          isActive ? "border-transparent shadow-sm" : "bg-muted/20 border-border"
                        )}
                        style={{
