@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import type { DeviceConfig, TriggerState } from "@/types";
+import type { DeviceConfig } from "@/types";
+import type { TriggerState } from "@/hooks/useDeviceStreaming";
 import { browserKeyToHid } from "@/lib/hid-keycodes";
 
 const INITIAL_TRIGGERS: TriggerState = { kaLeft: false, donLeft: false, donRight: false, kaRight: false };
