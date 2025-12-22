@@ -33,7 +33,7 @@ function createPadBuffer(capacity: number): PadBuffer {
     raw: new Float32Array(capacity),
     delta: new Float32Array(capacity),
     head: 0,
-    count: 0,
+    count: capacity,
     capacity,
   };
 }
@@ -49,21 +49,21 @@ function createPadBuffers(capacity: number): PadBuffers {
 
 function resizePadBuffer(buffer: PadBuffer, newCapacity: number): PadBuffer {
   const newBuffer = createPadBuffer(newCapacity);
-  const copyCount = Math.min(buffer.count, newCapacity);
-  const startRead = (buffer.head - buffer.count + buffer.capacity) % buffer.capacity;
+  const copyCount = Math.min(buffer.capacity, newCapacity);
+  const startRead = buffer.head;
 
   for (let i = 0; i < copyCount; i++) {
-    const readIdx = (startRead + buffer.count - copyCount + i) % buffer.capacity;
+    const readIdx = (startRead + buffer.capacity - copyCount + i) % buffer.capacity;
     newBuffer.raw[i] = buffer.raw[readIdx];
     newBuffer.delta[i] = buffer.delta[readIdx];
   }
 
   newBuffer.head = copyCount % newCapacity;
-  newBuffer.count = copyCount;
+  newBuffer.count = newCapacity;
   return newBuffer;
 }
 
-const DEFAULT_BUFFER_SIZE = 1000;
+const DEFAULT_BUFFER_SIZE = 5000;
 const INITIAL_TRIGGERS: TriggerState = { kaLeft: false, donLeft: false, donRight: false, kaRight: false };
 
 export function useDeviceStreaming({
@@ -119,7 +119,6 @@ export function useDeviceStreaming({
       buffer.raw[buffer.head] = padData.raw;
       buffer.delta[buffer.head] = delta;
       buffer.head = (buffer.head + 1) % buffer.capacity;
-      if (buffer.count < buffer.capacity) buffer.count++;
 
       previousRawRef.current[pad] = padData.raw;
     }
@@ -173,8 +172,11 @@ export function useDeviceStreaming({
 
   const clearData = useCallback((): void => {
     PAD_NAMES.forEach((pad) => {
-      buffersRef.current[pad].head = 0;
-      buffersRef.current[pad].count = 0;
+      const buffer = buffersRef.current[pad];
+      buffer.head = 0;
+      buffer.count = buffer.capacity;
+      buffer.raw.fill(0);
+      buffer.delta.fill(0);
       accumulatedTriggersRef.current[pad] = false;
     });
     setTriggers(INITIAL_TRIGGERS);

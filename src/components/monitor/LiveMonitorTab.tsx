@@ -37,7 +37,7 @@ export function LiveMonitorTab() {
             cutoffThreshold={config.pads[pad].cutoff}
             showHeavy={config.doubleInputMode}
             numPoints={maxBufferSize}
-            displayPoints={500}
+            displayPoints={2000}
           />
         ))}
       </div>

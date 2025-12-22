@@ -82,7 +82,6 @@ export function PadGraph({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wglpRef = useRef<WebglPlot | null>(null);
-  const rawLineRef = useRef<WebglLine | null>(null);
   const deltaLineRef = useRef<WebglLine | null>(null);
 
   // Zoom state
@@ -256,18 +255,13 @@ export function PadGraph({
     const wglp = new WebglPlot(canvas);
     wglpRef.current = wglp;
 
-    const rawLine = new WebglLine(hexToRgba(PAD_COLORS[pad], 1), displayPoints);
-    wglp.addLine(rawLine);
-    rawLineRef.current = rawLine;
-
-    const deltaLine = new WebglLine(hexToRgba(PAD_COLORS[pad], 0.5), displayPoints);
+    const deltaLine = new WebglLine(hexToRgba(PAD_COLORS[pad], 1), displayPoints);
     wglp.addLine(deltaLine);
     deltaLineRef.current = deltaLine;
 
     return () => {
       wglp.removeAllLines();
       wglpRef.current = null;
-      rawLineRef.current = null;
       deltaLineRef.current = null;
     };
   }, [pad, displayPoints]);
@@ -314,16 +308,15 @@ export function PadGraph({
     let animationId: number;
 
     const renderFrame = () => {
-      const rawLine = rawLineRef.current;
       const deltaLine = deltaLineRef.current;
       const wglp = wglpRef.current;
 
-      if (!rawLine || !deltaLine || !wglp || !buffer) {
+      if (!deltaLine || !wglp || !buffer) {
         animationId = requestAnimationFrame(renderFrame);
         return;
       }
 
-      const { raw, delta, head, count, capacity } = buffer;
+      const { delta, head, count, capacity } = buffer;
       const currentVisibleRange = visibleRangeRef.current;
 
       // Calculate visible range in data space
@@ -339,7 +332,6 @@ export function PadGraph({
       // Safety check - clear lines if no data
       if (sourceCount <= 0 || displayPoints <= 0 || count === 0) {
         for (let i = 0; i < displayPoints; i++) {
-          rawLine.setX(i, -2);
           deltaLine.setX(i, -2);
         }
         wglp.update();
@@ -354,31 +346,26 @@ export function PadGraph({
         const srcStart = Math.floor(clampedStart + i * step);
         const srcEnd = Math.min(Math.floor(clampedStart + (i + 1) * step), clampedEnd);
 
-        // Downsample by averaging
-        let rawSum = 0, deltaSum = 0, sampleCount = 0;
+        // Downsample by MAX (peak detection)
+        let maxDelta = 0;
+        let sampleCount = 0;
         for (let j = srcStart; j < srcEnd; j++) {
-          rawSum += readFromCircularBuffer(raw, head, count, capacity, j);
-          deltaSum += readFromCircularBuffer(delta, head, count, capacity, j);
+          const val = readFromCircularBuffer(delta, head, count, capacity, j);
+          if (val > maxDelta) maxDelta = val;
           sampleCount++;
         }
 
         if (sampleCount > 0) {
-          const avgRaw = rawSum / sampleCount;
-          const avgDelta = deltaSum / sampleCount;
           const dataX = clampedStart + (i + 0.5) * step;
 
           // Transform to WebGL coordinates (-1 to 1)
           const relativeX = dataX - dataOffset;
           const webglX = (relativeX / numPoints) * 2 - 1;
-          const webglYRaw = (avgRaw / maxADC) * 2 - 1;
-          const webglYDelta = (avgDelta / maxADC) * 2 - 1;
+          const webglYDelta = (maxDelta / maxADC) * 2 - 1;
 
-          rawLine.setX(i, webglX);
-          rawLine.setY(i, webglYRaw);
           deltaLine.setX(i, webglX);
           deltaLine.setY(i, webglYDelta);
         } else {
-          rawLine.setX(i, -2);
           deltaLine.setX(i, -2);
         }
       }
