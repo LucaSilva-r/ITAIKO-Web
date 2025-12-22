@@ -5,12 +5,14 @@ import { PadGraph } from "./PadGraph";
 import { PAD_NAMES } from "@/types";
 
 export function LiveMonitorTab() {
-  const { buffers, config, maxBufferSize, isReady, startStreaming } = useDevice();
+  const { buffers, config, maxBufferSize, isReady, startStreaming, stopStreaming } = useDevice();
 
   // Use ref to always have latest function without causing effect re-runs
   const startStreamingRef = useRef(startStreaming);
+  const stopStreamingRef = useRef(stopStreaming);
   useEffect(() => {
     startStreamingRef.current = startStreaming;
+    stopStreamingRef.current = stopStreaming;
   });
 
   // Start streaming when device is ready (after config read)
@@ -18,6 +20,9 @@ export function LiveMonitorTab() {
     if (isReady) {
       startStreamingRef.current('raw');
     }
+    return () => {
+      stopStreamingRef.current();
+    };
   }, [isReady]);
 
   return (

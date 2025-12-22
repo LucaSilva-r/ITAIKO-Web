@@ -210,10 +210,23 @@ export function useDeviceStreaming({
   }, []);
 
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isStreaming) {
+        // Best-effort attempt to stop streaming before tab closes
+        sendCommand(DeviceCommandValues.STOP_STREAMING).catch(() => {});
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
     if (!isConnected && isStreaming) {
       setIsStreaming(false);
     }
-  }, [isConnected, isStreaming]);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isConnected, isStreaming, sendCommand]);
 
   return {
     isStreaming,

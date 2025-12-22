@@ -122,6 +122,12 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
     if (isConnected && !wasConnectedRef.current) {
       // New connection - read config first
       setIsReady(false);
+
+      // Safety: Force stop streaming in case it was left running from a previous session
+      // We don't await this because we want to start reading config ASAP, and the stop command
+      // will be processed by the device before the read command in the serial queue.
+      serial.sendCommand(DeviceCommand.STOP_STREAMING).catch(console.warn);
+      
       deviceConfig.readFromDevice().then(() => {
         setIsReady(true);
       });
@@ -243,6 +249,13 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
     setTimeout(pollForDevice, 2000);
   };
 
+  const handleDisconnect = async () => {
+    if (streaming.isStreaming) {
+      await streaming.stopStreaming().catch(e => console.warn("Failed to stop streaming on disconnect", e));
+    }
+    await serial.disconnect();
+  };
+
   const value = useMemo<DeviceContextValue>(
     () => ({
       // Connection
@@ -254,7 +267,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       hasAuthorizedDevice: serial.hasAuthorizedDevice,
       requestPort: serial.requestPort,
       connect: serial.connect,
-      disconnect: serial.disconnect,
+      disconnect: handleDisconnect,
 
       // Configuration
       config: deviceConfig.config,
