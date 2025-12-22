@@ -13,7 +13,7 @@
       const relativePath = path.startsWith(base) ? path.slice(base.length) : path;
 
       // Redirect to index with the path as a query parameter
-      const redirectUrl = base + '/?redirect=' + encodeURIComponent(relativePath + window.location.search);
+      const redirectUrl = (base === '/' ? '' : base) + '/?redirect=' + encodeURIComponent(relativePath + window.location.search);
       window.location.replace(redirectUrl);
     </script>
   </head>
