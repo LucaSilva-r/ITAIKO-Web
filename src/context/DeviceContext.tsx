@@ -3,6 +3,7 @@ import type { ReactNode, RefObject } from "react";
 import { useWebSerial } from "@/hooks/useWebSerial";
 import { useDeviceConfig } from "@/hooks/useDeviceConfig";
 import { useDeviceStreaming, type TriggerState, type StreamingMode } from "@/hooks/useDeviceStreaming";
+import { useKeyboardInput } from "@/hooks/useKeyboardInput";
 import { useFirmwareUpdate, type FirmwareInfo, type UpdateStatus } from "@/hooks/useFirmwareUpdate";
 import {
   DeviceCommand,
@@ -101,6 +102,15 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
     stopReading: serial.stopReading,
     isConnected,
   });
+
+  const keyboardTriggers = useKeyboardInput(deviceConfig.config);
+
+  const triggers = useMemo(() => ({
+    kaLeft: streaming.triggers.kaLeft || keyboardTriggers.kaLeft,
+    donLeft: streaming.triggers.donLeft || keyboardTriggers.donLeft,
+    donRight: streaming.triggers.donRight || keyboardTriggers.donRight,
+    kaRight: streaming.triggers.kaRight || keyboardTriggers.kaRight,
+  }), [streaming.triggers, keyboardTriggers]);
 
   const firmwareUpdate = useFirmwareUpdate(deviceConfig.config.firmwareVersion);
 
@@ -272,7 +282,7 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       // Streaming
       isStreaming: streaming.isStreaming,
       streamingMode: streaming.streamingMode,
-      triggers: streaming.triggers,
+      triggers,
       buffers: streaming.buffers,
       startStreaming: streaming.startStreaming,
       stopStreaming: streaming.stopStreaming,

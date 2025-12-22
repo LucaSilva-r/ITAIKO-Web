@@ -80,19 +80,6 @@ export function ConfigurationTab() {
 
   const isFirstRender = useRef(true);
 
-  // Use ref to always have latest function without causing effect re-runs
-  const startStreamingRef = useRef(startStreaming);
-  useEffect(() => {
-    startStreamingRef.current = startStreaming;
-  });
-
-  // Start streaming when device is ready (for visual drum)
-  useEffect(() => {
-    if (isReady) {
-      startStreamingRef.current('input');
-    }
-  }, [isReady]);
-
   // Debounced auto-save: save to flash 500ms after config changes
   const saveToFlashRef = useRef(saveToFlash);
   useEffect(() => {

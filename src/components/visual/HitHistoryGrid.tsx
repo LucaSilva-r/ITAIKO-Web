@@ -78,7 +78,7 @@ export function HitHistoryGrid() {
                      <div 
                        key={colIndex}
                        className={cn(
-                         "h-8 flex-1 rounded-sm border transition-all duration-75",
+                         "h-8 flex-1 rounded-sm border",
                          isActive ? "border-transparent shadow-sm" : "bg-muted/10 border-border/50"
                        )}
                        style={{
