@@ -2,7 +2,7 @@ import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/numberinput";
 import { Button } from "@/components/ui/button";
 import type { TimingConfig } from "@/types";
 import { TIMING_MIN, TIMING_MAX } from "@/lib/default-config";
@@ -32,11 +32,9 @@ function TimingSetting({
     onChange(field, newValue[0], true);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const parsed = parseInt(e.target.value, 10);
-    if (!isNaN(parsed)) {
-      const clamped = Math.max(TIMING_MIN, Math.min(TIMING_MAX, parsed));
-      onChange(field, clamped, true);
+  const handleValueChange = (val: number | undefined) => {
+    if (val !== undefined) {
+      onChange(field, val, true);
     }
   };
 
@@ -45,16 +43,15 @@ function TimingSetting({
       <div className="flex items-center justify-between">
         <Label className="text-sm">{label}</Label>
         <div className="flex items-center gap-1">
-          <Input
-            type="number"
+          <NumberInput
             value={value}
-            onChange={handleInputChange}
-            className="w-20 h-8 text-right"
+            onValueChange={handleValueChange}
+            className="w-24"
             min={TIMING_MIN}
             max={TIMING_MAX}
             disabled={disabled}
+            suffix=" ms"
           />
-          <span className="text-sm text-muted-foreground w-8">ms</span>
         </div>
       </div>
       <Slider

@@ -1,159 +1,145 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { forwardRef, useCallback, useEffect, useState, useRef } from 'react';
-import { NumericFormat } from 'react-number-format';
-import type { NumericFormatProps } from 'react-number-format';
-import { Button } from './button';
-import { Input } from './input';
+import * as React from "react"
+import { ChevronDown, ChevronUp } from "lucide-react"
+import { NumericFormat, type NumericFormatProps } from "react-number-format"
+
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 export interface NumberInputProps
-  extends Omit<NumericFormatProps, 'value' | 'onValueChange'> {
-  stepper?: number;
-  thousandSeparator?: string;
-  placeholder?: string;
-  defaultValue?: number;
-  min?: number;
-  max?: number;
-  value?: number; // Controlled value
-  suffix?: string;
-  prefix?: string;
-  onValueChange?: (value: number | undefined) => void;
-  fixedDecimalScale?: boolean;
-  decimalScale?: number;
+  extends Omit<NumericFormatProps, "value" | "onValueChange"> {
+  stepper?: number
+  value?: number
+  onValueChange?: (value: number | undefined) => void
+  min?: number
+  max?: number
+  suffix?: string
+  prefix?: string
 }
 
-export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
+export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
   (
     {
-      stepper,
-      thousandSeparator,
-      placeholder,
-      defaultValue,
+      stepper = 1,
       min = -Infinity,
       max = Infinity,
       onValueChange,
-      fixedDecimalScale = false,
-      decimalScale = 0,
+      value,
+      className,
       suffix,
       prefix,
-      value: controlledValue,
+      decimalScale = 0,
+      fixedDecimalScale = false,
+      disabled,
       ...props
     },
     ref
   ) => {
-    const internalRef = useRef<HTMLInputElement>(null); // Create an internal ref
-    const combinedRef = ref || internalRef; // Use provided ref or internal ref
-    const [value, setValue] = useState<number | undefined>(
-      controlledValue ?? defaultValue
-    );
+    const [internalValue, setInternalValue] = React.useState<number | undefined>(value)
 
-    const handleIncrement = useCallback(() => {
-      setValue((prev) =>
-        prev === undefined ? stepper ?? 1 : Math.min(prev + (stepper ?? 1), max)
-      );
-    }, [stepper, max]);
+    React.useEffect(() => {
+      setInternalValue(value)
+    }, [value])
 
-    const handleDecrement = useCallback(() => {
-      setValue((prev) =>
-        prev === undefined
-          ? -(stepper ?? 1)
-          : Math.max(prev - (stepper ?? 1), min)
-      );
-    }, [stepper, min]);
+    const handleIncrement = () => {
+      if (disabled) return
+      const currentValue = internalValue ?? 0
+      const newValue = Math.min(currentValue + stepper, max)
+      setInternalValue(newValue)
+      onValueChange?.(newValue)
+    }
 
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (
-          document.activeElement ===
-          (combinedRef as React.RefObject<HTMLInputElement>).current
-        ) {
-          if (e.key === 'ArrowUp') {
-            handleIncrement();
-          } else if (e.key === 'ArrowDown') {
-            handleDecrement();
-          }
-        }
-      };
+    const handleDecrement = () => {
+      if (disabled) return
+      const currentValue = internalValue ?? 0
+      const newValue = Math.max(currentValue - stepper, min)
+      setInternalValue(newValue)
+      onValueChange?.(newValue)
+    }
 
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-      };
-    }, [handleIncrement, handleDecrement, combinedRef]);
-
-    useEffect(() => {
-      if (controlledValue !== undefined) {
-        setValue(controlledValue);
-      }
-    }, [controlledValue]);
-
-    const handleChange = (values: {
-      value: string;
-      floatValue: number | undefined;
-    }) => {
-      const newValue =
-        values.floatValue === undefined ? undefined : values.floatValue;
-      setValue(newValue);
-      if (onValueChange) {
-        onValueChange(newValue);
-      }
-    };
+    const handleChange = (values: { floatValue: number | undefined }) => {
+      const newValue = values.floatValue
+      setInternalValue(newValue)
+      onValueChange?.(newValue)
+    }
 
     const handleBlur = () => {
-      if (value !== undefined) {
-        if (value < min) {
-          setValue(min);
-          (ref as React.RefObject<HTMLInputElement>).current!.value =
-            String(min);
-        } else if (value > max) {
-          setValue(max);
-          (ref as React.RefObject<HTMLInputElement>).current!.value =
-            String(max);
+      if (internalValue !== undefined) {
+        if (internalValue < min) {
+          setInternalValue(min)
+          onValueChange?.(min)
+        } else if (internalValue > max) {
+          setInternalValue(max)
+          onValueChange?.(max)
         }
       }
-    };
+    }
+
+    // Handle keyboard arrow keys
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault()
+        handleIncrement()
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault()
+        handleDecrement()
+      }
+    }
 
     return (
-      <div className="flex items-center">
+      <div
+        className={cn(
+          "group flex h-9 w-full items-center rounded-md border border-input bg-transparent shadow-xs ring-offset-background focus-within:ring-[3px] focus-within:ring-ring/50 focus-within:border-ring",
+          disabled && "cursor-not-allowed opacity-50",
+          className
+        )}
+      >
         <NumericFormat
-          value={value}
+          getInputRef={ref}
+          value={internalValue}
           onValueChange={handleChange}
-          thousandSeparator={thousandSeparator}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           decimalScale={decimalScale}
           fixedDecimalScale={fixedDecimalScale}
           allowNegative={min < 0}
-          valueIsNumericString
-          onBlur={handleBlur}
           max={max}
           min={min}
           suffix={suffix}
           prefix={prefix}
+          disabled={disabled}
           customInput={Input}
-          placeholder={placeholder}
-          className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none rounded-r-none relative"
-          getInputRef={combinedRef} // Use combined ref
+          className="h-full flex-1 border-0 bg-transparent px-3 py-1 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
           {...props}
         />
-        <div className="flex flex-col">
+        <div className="flex h-full flex-col border-l border-input">
           <Button
-            aria-label="Increase value"
-            className="px-2 h-5 rounded-l-none rounded-br-none border-input border-l-0 border-b-[0.5px] focus-visible:relative"
-            variant="outline"
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-1/2 w-6 rounded-none rounded-tr-md border-b border-input px-0 hover:bg-accent focus:z-10 focus-visible:ring-inset focus-visible:ring-ring/50"
             onClick={handleIncrement}
-            disabled={value === max}
+            disabled={disabled || (internalValue !== undefined && internalValue >= max)}
+            tabIndex={-1}
           >
-            <ChevronUp size={15} />
+            <ChevronUp className="h-3 w-3" />
+            <span className="sr-only">Increase</span>
           </Button>
           <Button
-            aria-label="Decrease value"
-            className="px-2 h-5 rounded-l-none rounded-tr-none border-input border-l-0 border-t-[0.5px] focus-visible:relative"
-            variant="outline"
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-1/2 w-6 rounded-none rounded-br-md px-0 hover:bg-accent focus:z-10 focus-visible:ring-inset focus-visible:ring-ring/50"
             onClick={handleDecrement}
-            disabled={value === min}
+            disabled={disabled || (internalValue !== undefined && internalValue <= min)}
+            tabIndex={-1}
           >
-            <ChevronDown size={15} />
+            <ChevronDown className="h-3 w-3" />
+            <span className="sr-only">Decrease</span>
           </Button>
         </div>
       </div>
-    );
+    )
   }
-);
+)
+NumberInput.displayName = "NumberInput"
