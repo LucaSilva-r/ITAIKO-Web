@@ -2,7 +2,7 @@ import { useDevice } from "@/context/DeviceContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/numberinput";
 import type { PadName } from "@/types";
 import { PAD_LABELS, PAD_COLORS } from "@/types";
 import { THRESHOLD_MIN, THRESHOLD_MAX } from "@/lib/default-config";
@@ -27,11 +27,9 @@ function PadThresholdSetting({
   onChange,
   disabled,
 }: PadThresholdSettingProps) {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value, 10);
-    if (!isNaN(val)) {
-      const clamped = Math.max(THRESHOLD_MIN, Math.min(THRESHOLD_MAX, val));
-      onChange(clamped, true);
+  const handleValueChange = (val: number | undefined) => {
+    if (val !== undefined) {
+      onChange(val, true);
     }
   };
 
@@ -49,12 +47,11 @@ function PadThresholdSetting({
         <Label htmlFor={id} className="text-sm">
           {label}
         </Label>
-        <Input
+        <NumberInput
           id={id}
-          type="number"
           value={value}
-          onChange={handleInputChange}
-          className="w-20 h-8 text-right"
+          onValueChange={handleValueChange}
+          className="w-24"
           min={THRESHOLD_MIN}
           max={THRESHOLD_MAX}
           disabled={disabled}
