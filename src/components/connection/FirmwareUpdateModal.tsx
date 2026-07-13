@@ -29,14 +29,16 @@ export function FirmwareUpdateModal() {
 
   // Auto-close modal when device reconnects after successful update
   useEffect(() => {
-    if (status === 'complete') {
+    // 'manual_action_required' is the Firefox path's terminal state — treat it as complete too
+    if (status === 'complete' || status === 'manual_action_required') {
       wasCompleteRef.current = true;
     }
 
-    // If we were complete and device reconnected (status changed to idle/checking), close modal
+    // If we were complete and device reconnected, reload the page for a clean slate
+    // (avoids stale serial/update state after the device reboots with new firmware)
     if (wasCompleteRef.current && isConnected && (status === 'idle' || status === 'checking')) {
       wasCompleteRef.current = false;
-      setModalOpen(false);
+      window.location.reload();
     }
   }, [status, isConnected, setModalOpen]);
 
@@ -189,20 +191,12 @@ export function FirmwareUpdateModal() {
                  }
                </Button>
              </>
-           ) : status === 'complete' ? (
-             <Button className="w-full" onClick={() => setModalOpen(false)}>
-               {t("firmwareUpdateModal.buttons.close")}
-             </Button>
-           ) : status === 'manual_action_required' ? (
-             <Button className="w-full" onClick={() => setModalOpen(false)}>
-               {t("firmwareUpdateModal.buttons.close")}
-             </Button>
-           ) : status === 'error' ? (
-             <Button className="w-full" variant="secondary" onClick={() => setModalOpen(false)}>
-               {t("firmwareUpdateModal.buttons.close")}
-             </Button>
-           ) : (
+           ) : isUpdating ? (
              <Button disabled className="w-full">{t("firmwareUpdateModal.buttons.updating")}</Button>
+           ) : (
+             <Button className="w-full" variant={status === 'error' ? 'secondary' : 'default'} onClick={() => setModalOpen(false)}>
+               {t("firmwareUpdateModal.buttons.close")}
+             </Button>
            )}
         </DialogFooter>
       </DialogContent>

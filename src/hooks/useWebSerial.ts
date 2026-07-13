@@ -51,6 +51,27 @@ export function useWebSerial(): UseWebSerialReturn {
   // Ref to track if component is mounted (for cleanup)
   const isMountedRef = useRef(true);
 
+  // Guards against concurrent connect() calls (e.g. reconnect polling racing the 'connect' event)
+  const connectInFlightRef = useRef(false);
+
+  // Reset all state when the device is lost (unplugged) rather than intentionally disconnected
+  const handleDeviceLost = useCallback(() => {
+    if (disconnectingRef.current) return;
+    // No active connection to tear down (already disconnected) — avoid spurious error toast
+    if (!readerRef.current && !writerRef.current) return;
+    loopRunningRef.current = false;
+    onDataCallbackRef.current = null;
+    setIsReading(false);
+    decoderReadableStreamRef.current = null;
+    inputDoneRef.current = null;
+    readerRef.current = null;
+    writerRef.current = null;
+    lineQueueRef.current = [];
+    port.current = null;
+    setStatus("disconnected");
+    setError(i18n.t("serial.deviceDisconnected", { ns: "messages" }));
+  }, []);
+
   // Check for authorized ports on mount and set up event listeners
   useEffect(() => {
     isMountedRef.current = true;
@@ -85,7 +106,13 @@ export function useWebSerial(): UseWebSerialReturn {
        checkAuthorizedPorts();
     };
 
-    const handleDisconnect = () => {
+    const handleDisconnect = (e: Event) => {
+       // If the unplugged port is the one we track, reset connection state and drop the
+       // stale port reference so a re-enumerated device can auto-connect again
+       if (e.target === port.current) {
+         handleDeviceLost();
+         port.current = null;
+       }
        checkAuthorizedPorts();
     };
 
@@ -97,7 +124,7 @@ export function useWebSerial(): UseWebSerialReturn {
       navigator.serial.removeEventListener('connect', handleConnect);
       navigator.serial.removeEventListener('disconnect', handleDisconnect);
     };
-  }, [isSupported]); // We intentionally leave 'connect' and 'status' out to avoid loops, as checkAuthorizedPorts handles the logic safely
+  }, [isSupported, handleDeviceLost]); // We intentionally leave 'connect' and 'status' out to avoid loops, as checkAuthorizedPorts handles the logic safely
 
   // Cleanup: disconnect when the hook unmounts
   useEffect(() => {
@@ -149,7 +176,11 @@ export function useWebSerial(): UseWebSerialReturn {
           // Read already-decoded strings! No manual TextDecoder needed.
           const { value, done } = await readerRef.current.read();
 
-          if (done) break;
+          if (done) {
+            // Stream ended without an error (some unplugs close cleanly instead of throwing)
+            handleDeviceLost();
+            break;
+          }
 
           if (value) {
             buffer += value;
@@ -177,19 +208,8 @@ export function useWebSerial(): UseWebSerialReturn {
           }
         } catch (err) {
           // Device was unplugged or lost - trigger disconnect if not already disconnecting
-          if (!disconnectingRef.current) {
-            console.error("Device lost:", err);
-            loopRunningRef.current = false;
-            onDataCallbackRef.current = null;
-            setIsReading(false);
-            decoderReadableStreamRef.current = null;
-            inputDoneRef.current = null;
-            readerRef.current = null;
-            writerRef.current = null;
-            lineQueueRef.current = [];
-            setStatus("disconnected");
-            setError(i18n.t("serial.deviceDisconnected", { ns: "messages" }));
-          }
+          if (!disconnectingRef.current) console.error("Device lost:", err);
+          handleDeviceLost();
           break;
         }
       }
@@ -197,7 +217,7 @@ export function useWebSerial(): UseWebSerialReturn {
     };
 
     readLoop();
-  }, []);
+  }, [handleDeviceLost]);
 
   const requestPort = useCallback(async (): Promise<SerialPort | null> => {
     if (!isSupported) {
@@ -242,6 +262,11 @@ export function useWebSerial(): UseWebSerialReturn {
       return false;
     }
 
+    // Already connected or a connect is in progress — don't open the port twice
+    if (readerRef.current) return true;
+    if (connectInFlightRef.current) return false;
+    connectInFlightRef.current = true;
+
     try {
       setStatus("connecting");
       setError(null);
@@ -269,6 +294,8 @@ export function useWebSerial(): UseWebSerialReturn {
       setError(err instanceof Error ? err.message : i18n.t("serial.connectionFailed", { ns: "messages" }));
       setStatus("error");
       return false;
+    } finally {
+      connectInFlightRef.current = false;
     }
   }, [port, startReadLoop]);
 

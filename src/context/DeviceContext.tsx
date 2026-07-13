@@ -183,8 +183,9 @@ export function DeviceProvider({ children }: DeviceProviderProps) {
       const port = await serial.findAuthorizedPort();
       if (port) {
         console.log("Device found! Connecting...");
-        await serial.connect();
-        return;
+        // Keep polling if the connect fails (device may enumerate before the port is openable)
+        const ok = await serial.connect();
+        if (ok) return;
       }
 
       if (attempts < maxAttempts) {

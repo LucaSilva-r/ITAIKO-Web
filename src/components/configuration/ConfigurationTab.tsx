@@ -26,7 +26,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useSearchParams } from "react-router-dom";
-import { KeyboardModeHelperModal, shouldShowKeyboardHelper } from "./KeyboardModeHelperModal";
+import {
+  KeyboardModeHelperModal,
+  shouldShowKeyboardHelper,
+} from "./KeyboardModeHelperModal";
 
 export function ConfigurationTab() {
   const { t } = useTranslation("config");
@@ -119,7 +122,9 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.kaRight}
               style={{
                 opacity: triggers.kaRight ? 0.6 : 0,
-                transition: triggers.kaRight ? "none" : "opacity 200ms ease-out",
+                transition: triggers.kaRight
+                  ? "none"
+                  : "opacity 200ms ease-out",
               }}
             />
             {/* Don Left - left half of inner circle */}
@@ -128,7 +133,9 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.donLeft}
               style={{
                 opacity: triggers.donLeft ? 0.6 : 0,
-                transition: triggers.donLeft ? "none" : "opacity 200ms ease-out",
+                transition: triggers.donLeft
+                  ? "none"
+                  : "opacity 200ms ease-out",
               }}
             />
             {/* Don Right - right half of inner circle */}
@@ -137,7 +144,9 @@ export function ConfigurationTab() {
               fill={PAD_COLORS.donRight}
               style={{
                 opacity: triggers.donRight ? 0.6 : 0,
-                transition: triggers.donRight ? "none" : "opacity 200ms ease-out",
+                transition: triggers.donRight
+                  ? "none"
+                  : "opacity 200ms ease-out",
               }}
             />
           </svg>
@@ -147,8 +156,12 @@ export function ConfigurationTab() {
         {!isReady && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
             <div className="bg-background/80 backdrop-blur-md px-6 py-3 rounded-2xl border shadow-sm text-center space-y-2">
-              <p className="text-lg font-semibold">{t("connectOverlay.connectYourDrum")}</p>
-              <p className="text-xs text-muted-foreground">{t("connectOverlay.toStartConfiguration")}</p>
+              <p className="text-lg font-semibold">
+                {t("connectOverlay.connectYourDrum")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("connectOverlay.toStartConfiguration")}
+              </p>
               <p className="text-xs font-semibold text-amber-500 animate-pulse">
                 {t("connectOverlay.setKeyboardMode")}
               </p>
@@ -161,7 +174,9 @@ export function ConfigurationTab() {
       <HitHistoryGrid />
 
       {/* Configuration Settings - Deactivated when not ready */}
-      <div className={`space-y-6 transition-all duration-500 ${!isReady ? "pointer-events-none opacity-50" : ""}`}>
+      <div
+        className={`space-y-6 transition-all duration-500 ${!isReady ? "pointer-events-none opacity-50" : ""}`}
+      >
         {/* Global Settings - Advanced only */}
         {advancedMode && (
           <Card>
@@ -174,7 +189,9 @@ export function ConfigurationTab() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="double-mode">{t("globalSettings.allowDoubleInputs")}</Label>
+                  <Label htmlFor="double-mode">
+                    {t("globalSettings.allowDoubleInputs")}
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     {t("globalSettings.allowDoubleInputsDescription")}
                   </p>
@@ -218,7 +235,7 @@ export function ConfigurationTab() {
         <DrumKeyMapping />
 
         {/* Roll Boost (連打增速) - Always visible */}
-        <RollBoostSettings />
+        {advancedMode && <RollBoostSettings />}
 
         {/* Advanced Settings */}
         {advancedMode && (
@@ -252,8 +269,12 @@ export function ConfigurationTab() {
           </DialogHeader>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResetDialog(false)}>{t("factoryReset.cancel")}</Button>
-            <Button variant="destructive" onClick={handleFactoryReset}>{t("factoryReset.resetToDefaults")}</Button>
+            <Button variant="outline" onClick={() => setShowResetDialog(false)}>
+              {t("factoryReset.cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleFactoryReset}>
+              {t("factoryReset.resetToDefaults")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
