@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Skull } from "lucide-react";
 import { toast } from "sonner";
 import { EmergencyRecoveryModal } from "./EmergencyRecoveryModal";
+import { getUsbModeLabel } from "@/lib/usb-mode";
 
 export function HeaderConnectionStatus() {
   const { t } = useTranslation("connection");
@@ -66,6 +67,13 @@ export function HeaderConnectionStatus() {
 
   return (
     <div className="flex items-center gap-2">
+      {isConnected && config.usbMode && (
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {t("headerConnectionStatus.deviceMode", {
+            mode: getUsbModeLabel(config.usbMode),
+          })}
+        </span>
+      )}
       {isConnected && config.firmwareVersion && (
         <span className="text-xs text-muted-foreground font-mono">
           v{config.firmwareVersion}

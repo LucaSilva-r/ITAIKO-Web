@@ -130,6 +130,7 @@ export interface DeviceConfig {
   bufferedInput?: boolean; // buffer & replay fast same-pad re-hits (setting 47)
   firmwareVersion?: string;
   edition?: string; // Device edition / branding (e.g. "iTAIKO", "ZhongTaiko")
+  usbMode?: string; // Stable firmware mode token (e.g. "KEYBOARD_P1", "PS4_TATACON")
 }
 
 export interface PS4AuthBackupData {

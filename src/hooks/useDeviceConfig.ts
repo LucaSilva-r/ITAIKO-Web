@@ -179,10 +179,10 @@ export function useDeviceConfig({
       clearBuffer?.();
       await sendCommand(DeviceCommandValues.READ_SETTINGS);
       const response = await readUntilTimeout(1000);
-      const { settings, version, edition } = parseSettingsResponse(response);
+      const { settings, version, edition, usbMode } = parseSettingsResponse(response);
 
       if (settings.size > 0) {
-        const newConfig = settingsToConfig(settings, version, edition);
+        const newConfig = settingsToConfig(settings, version, edition, usbMode);
         rememberEdition(edition);
         setConfig(newConfig);
         setSavedConfig(newConfig);
@@ -291,8 +291,14 @@ export function useDeviceConfig({
   }, [isConnected, clearBuffer, sendCommand, readUntilTimeout]);
 
   const resetToDefaults = useCallback((): void => {
-    setConfig(() => {
-      const next = DEFAULT_DEVICE_CONFIG;
+    setConfig((prev) => {
+      // Device identity is read-only metadata, so keep it when resetting settings.
+      const next = {
+        ...DEFAULT_DEVICE_CONFIG,
+        firmwareVersion: prev.firmwareVersion,
+        edition: prev.edition,
+        usbMode: prev.usbMode,
+      };
       handleCommit(next);
       return next;
     });

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Usb, AlertCircle, Skull } from "lucide-react";
 import { toast } from "sonner";
 import { EmergencyRecoveryModal } from "./EmergencyRecoveryModal";
+import { getUsbModeLabel } from "@/lib/usb-mode";
 
 export function ConnectionPanel() {
   const { t } = useTranslation("connection");
@@ -88,6 +89,13 @@ export function ConnectionPanel() {
               {isConnected && config.firmwareVersion && (
                 <span className="text-xs text-muted-foreground font-mono border rounded px-1.5 py-0.5 bg-muted/50">
                   v{config.firmwareVersion}
+                </span>
+              )}
+              {isConnected && config.usbMode && (
+                <span className="text-xs text-muted-foreground border rounded px-1.5 py-0.5 bg-muted/50">
+                  {t("connectionPanel.deviceMode", {
+                    mode: getUsbModeLabel(config.usbMode),
+                  })}
                 </span>
               )}
             </div>

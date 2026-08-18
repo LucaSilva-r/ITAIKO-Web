@@ -5,6 +5,7 @@
       "description": "Please use Chrome, Edge, or Opera to configure your drum."
     },
     "deviceConnection": "Device Connection",
+    "deviceMode": "Mode: {{mode}}",
     "status": {
       "connected": "Connected",
       "connecting": "Connecting...",
@@ -20,6 +21,7 @@
     "notSupported": "WebSerial not supported",
     "firefoxExtensionLink": "To configure your drum with Firefox, please install the WebSerial extension",
     "emergencyRecovery": "Emergency Recovery",
+    "deviceMode": "Mode: {{mode}}",
     "connect": "Connect",
     "disconnect": "Disconnect"
   },

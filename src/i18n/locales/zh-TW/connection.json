@@ -5,6 +5,7 @@
       "description": "請使用 Chrome、Edge 或 Opera 來設定您的太鼓。"
     },
     "deviceConnection": "裝置連線",
+    "deviceMode": "模式：{{mode}}",
     "status": {
       "connected": "已連線",
       "connecting": "連線中...",
@@ -20,6 +21,7 @@
     "notSupported": "不支援 WebSerial",
     "firefoxExtensionLink": "若要在 Firefox 中設定太鼓，請安裝 WebSerial 擴充功能",
     "emergencyRecovery": "緊急救援",
+    "deviceMode": "模式：{{mode}}",
     "connect": "連線",
     "disconnect": "中斷連線"
   },

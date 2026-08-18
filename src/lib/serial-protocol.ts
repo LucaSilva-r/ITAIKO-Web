@@ -40,15 +40,17 @@ export function parseInputStreamLine(line: string): Record<PadName, boolean> | n
 
 // Parse settings response from device
 // Format: key:value lines (0:800, 1:800, etc.)
-// Also extracts version if present (Version:x.x.x) and edition if present (Edition:ZhongTaiko)
+// Also extracts device metadata when present (Mode, Version, and Edition).
 export function parseSettingsResponse(response: string): {
   settings: Map<number, number>;
   version?: string;
   edition?: string;
+  usbMode?: string;
 } {
   const settings = new Map<number, number>();
   let version: string | undefined;
   let edition: string | undefined;
+  let usbMode: string | undefined;
   const lines = response.trim().split("\n");
 
   for (const line of lines) {
@@ -61,17 +63,20 @@ export function parseSettingsResponse(response: string): {
       version = line.substring(8).trim();
     } else if (line.startsWith("Edition:")) {
       edition = line.substring(8).trim();
+    } else if (line.startsWith("Mode:")) {
+      usbMode = line.substring(5).trim();
     }
   }
 
-  return { settings, version, edition };
+  return { settings, version, edition, usbMode };
 }
 
 // Convert settings map to DeviceConfig
 export function settingsToConfig(
   settings: Map<number, number>,
   version?: string,
-  edition?: string
+  edition?: string,
+  usbMode?: string
 ): DeviceConfig {
   const getPadThresholds = (pad: PadName) => ({
     light: settings.get(SETTING_INDICES.lightThreshold[pad]) ?? 800,
@@ -98,6 +103,7 @@ export function settingsToConfig(
     bufferedInput: (settings.get(SETTING_INDICES.bufferedInput) ?? 0) === 1,
     firmwareVersion: version,
     edition,
+    usbMode,
   };
 
   // Add key mappings if present (firmware may not support them)
